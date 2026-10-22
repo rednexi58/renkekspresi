@@ -1,7 +1,7 @@
 > Oyun adı: **Renk Ekspresi**. İngilizce adı: **Color Express**.
 > Apple'da mevcut uygulamanın görünen adını App Information bölümünde değiştir; sırf ad değişti diye yeni uygulama kaydı açma.
-> `com.bedodrive.trainjam3d` teknik kimliği önceki Apple kaydıyla uyum için korundu; oyuncuya görünen oyun adı değildir.
-> Bu pakette Codemagic bağlantı adı `RenkEkspresiApple`, değişken grubu `renk_ekspresi_ios`, build değişkeni `RENK_EKSPRESI_BUILD_NUMBER` olarak yenilendi. Eski adlarla bağlantı kurduysan panelde bunları da aynı şekilde adlandır.
+> Bedo Games için teknik kimlik `com.bedogames.renkekspresi` olarak sabitlenmiştir.
+> Bu pakette Codemagic bağlantı adı `Apple AppStore`, değişken grubu `renk_ekspresi_ios`, build değişkeni `RENK_EKSPRESI_BUILD_NUMBER` olarak ayarlanmıştır.
 
 # Renk Ekspresi v0.27 — TestFlight hazırlık paketi
 
@@ -15,9 +15,9 @@ Türkçe/İngilizce: Ayarlar > Language / Dil. İlk açılışta cihaz dili seç
 
 ## 1. Bu oyun için Apple kaydını aç
 
-Apple Developer > Certificates, Identifiers & Profiles > Identifiers içinde App ID oluştur. Önceki paketle aynı tutulan teknik Bundle ID: `com.bedodrive.trainjam3d`. Önce hesabında kullanılabilirliğini doğrula. Başka oyunun kimliğini kullanma.
+Apple Developer > Certificates, Identifiers & Profiles > Identifiers içinde App ID oluştur. Bundle ID: `com.bedogames.renkekspresi`. Önce hesabında kullanılabilirliğini doğrula. Başka oyunun kimliğini kullanma.
 
-App Store Connect > Apps > + > New App: iOS, Renk Ekspresi (adı kullanılabilir olmalı), ana dil seçimi, bu Bundle ID, SKU `trainjam3d-ios`. Ana dil, oyunun diğer dili desteklemesini engellemez. Bundle ID farklı seçilirse Godot/export_presets.cfg ve codemagic.yaml içindeki iki kimliği birlikte güncelle.
+App Store Connect > Apps > + > New App: iOS, Renk Ekspresi (adı kullanılabilir olmalı), ana dil seçimi, bu Bundle ID, SKU `bedogames-renkekspresi-ios`. Ana dil, oyunun diğer dili desteklemesini engellemez.
 
 ## 2. Kaynağı kendi Git depona koy
 
@@ -25,7 +25,7 @@ ZIP'i aç. `codemagic.yaml`, `ci/` ve `Godot/` aynı kök dizinde olacak şekild
 
 ## 3. Apple bağlantısını Codemagic'e ekle
 
-Codemagic > Team settings > Integrations içinde App Store Connect bağlantısını `RenkEkspresiApple` adıyla oluştur. App Store Connect > Users and Access > Integrations > App Store Connect API üzerinden gerekli anahtarı oluşturup Issuer ID, Key ID ve .p8 dosyasını Codemagic'in ilgili güvenli alanına gir. Anahtarı sohbete veya Git'e gönderme. Kullanılan rolün uygulama yüklemeye yetkili olması gerekir.
+Codemagic > Team settings > Integrations içinde mevcut `Apple AppStore` bağlantısını kullan. App Store Connect API anahtarını sohbete veya Git'e gönderme. Kullanılan rolün uygulama yüklemeye yetkili olması gerekir.
 
 ## 4. İmzalama ve iki değişken
 

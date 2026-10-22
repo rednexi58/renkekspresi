@@ -1,10 +1,10 @@
 [
   {
     "id": 1,
-    "name": "İlk durak",
-    "theme": 0,
+    "name": "Kıyıya ilk yolculuk",
+    "theme": 1,
     "layout": 0,
-    "map_seed": 19017,
+    "map_seed": 280317,
     "train": [
       3,
       3,
@@ -82,7 +82,7 @@
     "guided": true,
     "dispatch_seconds": 0.32,
     "active_count": 0,
-    "lesson": "Önü açık vagona dokun · Üç yuvayı planla",
+    "lesson": "Önü açık vagona dokun.",
     "shape": 0,
     "mode": "rescue",
     "idle_seconds": 25,
@@ -104,15 +104,18 @@
       "rules_version": "0.19-physical-window",
       "generation_seed": 190137
     },
-    "region": "Yeşil Vadi",
-    "difficulty": 1
+    "region": "Kıyı İstasyonu",
+    "difficulty": 1,
+    "name_en": "First coastal trip",
+    "region_en": "Coastal Station",
+    "campaign_revision": 28
   },
   {
     "id": 2,
-    "name": "Çayır yolu",
-    "theme": 0,
-    "layout": 1,
-    "map_seed": 19034,
+    "name": "İskele dönüşü",
+    "theme": 1,
+    "layout": 2,
+    "map_seed": 280634,
     "train": [
       2,
       2,
@@ -131,8 +134,8 @@
       {
         "id": 0,
         "row": 0,
-        "col": 0,
-        "dx": -1,
+        "col": 2,
+        "dx": 1,
         "dz": 0,
         "color": 1,
         "capacity": 2
@@ -141,7 +144,7 @@
         "id": 1,
         "row": 0,
         "col": 1,
-        "dx": -1,
+        "dx": 1,
         "dz": 0,
         "color": 2,
         "capacity": 2
@@ -149,8 +152,8 @@
       {
         "id": 2,
         "row": 0,
-        "col": 2,
-        "dx": -1,
+        "col": 0,
+        "dx": 1,
         "dz": 0,
         "color": 2,
         "capacity": 2
@@ -158,8 +161,8 @@
       {
         "id": 3,
         "row": 1,
-        "col": 0,
-        "dx": 1,
+        "col": 2,
+        "dx": -1,
         "dz": 0,
         "color": 1,
         "capacity": 2
@@ -168,7 +171,7 @@
         "id": 4,
         "row": 1,
         "col": 1,
-        "dx": 1,
+        "dx": -1,
         "dz": 0,
         "color": 1,
         "capacity": 2
@@ -176,8 +179,8 @@
       {
         "id": 5,
         "row": 1,
-        "col": 2,
-        "dx": 1,
+        "col": 0,
+        "dx": -1,
         "dz": 0,
         "color": 2,
         "capacity": 2
@@ -190,7 +193,7 @@
     "guided": true,
     "dispatch_seconds": 0.32,
     "active_count": 0,
-    "lesson": "Önü açık vagona dokun · Üç yuvayı planla",
+    "lesson": "Ok yönündeki yolu kontrol et.",
     "shape": 0,
     "mode": "rescue",
     "idle_seconds": 25,
@@ -212,15 +215,18 @@
       "rules_version": "0.19-physical-window",
       "generation_seed": 190274
     },
-    "region": "Yeşil Vadi",
-    "difficulty": 1
+    "region": "Kıyı İstasyonu",
+    "difficulty": 1,
+    "name_en": "Pier turn",
+    "region_en": "Coastal Station",
+    "campaign_revision": 28
   },
   {
     "id": 3,
-    "name": "Kırmızı makas",
-    "theme": 0,
-    "layout": 2,
-    "map_seed": 19051,
+    "name": "Fener yolu",
+    "theme": 1,
+    "layout": 4,
+    "map_seed": 280951,
     "train": [
       0,
       0,
@@ -304,7 +310,7 @@
     "guided": true,
     "dispatch_seconds": 0.32,
     "active_count": 0,
-    "lesson": "Önü açık vagona dokun · Üç yuvayı planla",
+    "lesson": "Bir sonraki renge bak.",
     "shape": 0,
     "mode": "rescue",
     "idle_seconds": 25,
@@ -326,15 +332,18 @@
       "rules_version": "0.19-physical-window",
       "generation_seed": 190411
     },
-    "region": "Yeşil Vadi",
-    "difficulty": 1
+    "region": "Kıyı İstasyonu",
+    "difficulty": 1,
+    "name_en": "Lighthouse route",
+    "region_en": "Coastal Station",
+    "campaign_revision": 28
   },
   {
     "id": 4,
-    "name": "Bahçe geçidi",
-    "theme": 0,
-    "layout": 3,
-    "map_seed": 19068,
+    "name": "Koyun kıvrımı",
+    "theme": 1,
+    "layout": 1,
+    "map_seed": 281268,
     "train": [
       4,
       4,
@@ -359,8 +368,8 @@
       {
         "id": 0,
         "row": 0,
-        "col": 0,
-        "dx": -1,
+        "col": 2,
+        "dx": 1,
         "dz": 0,
         "color": 4,
         "capacity": 3
@@ -369,7 +378,7 @@
         "id": 1,
         "row": 0,
         "col": 1,
-        "dx": -1,
+        "dx": 1,
         "dz": 0,
         "color": 1,
         "capacity": 3
@@ -377,8 +386,8 @@
       {
         "id": 2,
         "row": 0,
-        "col": 2,
-        "dx": -1,
+        "col": 0,
+        "dx": 1,
         "dz": 0,
         "color": 3,
         "capacity": 3
@@ -386,8 +395,8 @@
       {
         "id": 3,
         "row": 1,
-        "col": 0,
-        "dx": 1,
+        "col": 2,
+        "dx": -1,
         "dz": 0,
         "color": 1,
         "capacity": 3
@@ -396,7 +405,7 @@
         "id": 4,
         "row": 1,
         "col": 1,
-        "dx": 1,
+        "dx": -1,
         "dz": 0,
         "color": 4,
         "capacity": 3
@@ -404,8 +413,8 @@
       {
         "id": 5,
         "row": 1,
-        "col": 2,
-        "dx": 1,
+        "col": 0,
+        "dx": -1,
         "dz": 0,
         "color": 3,
         "capacity": 3
@@ -418,7 +427,7 @@
     "guided": true,
     "dispatch_seconds": 0.32,
     "active_count": 0,
-    "lesson": "Önü açık vagona dokun · Üç yuvayı planla",
+    "lesson": "Çıkışı açan vagonu önce seç.",
     "shape": 0,
     "mode": "rescue",
     "idle_seconds": 25,
@@ -440,15 +449,18 @@
       "rules_version": "0.19-physical-window",
       "generation_seed": 190548
     },
-    "region": "Yeşil Vadi",
-    "difficulty": 1
+    "region": "Kıyı İstasyonu",
+    "difficulty": 1,
+    "name_en": "Bay bend",
+    "region_en": "Coastal Station",
+    "campaign_revision": 28
   },
   {
     "id": 5,
-    "name": "Küçük yolculuk",
-    "theme": 0,
-    "layout": 4,
-    "map_seed": 19085,
+    "name": "Sahil ekspresi",
+    "theme": 1,
+    "layout": 3,
+    "map_seed": 281585,
     "train": [
       3,
       3,
@@ -538,7 +550,7 @@
     "guided": true,
     "dispatch_seconds": 0.32,
     "active_count": 0,
-    "lesson": "Önü açık vagona dokun · Üç yuvayı planla",
+    "lesson": "Üç yuvayı planla.",
     "shape": 0,
     "mode": "rescue",
     "idle_seconds": 25,
@@ -560,15 +572,18 @@
       "rules_version": "0.19-physical-window",
       "generation_seed": 190685
     },
-    "region": "Yeşil Vadi",
-    "difficulty": 1
+    "region": "Kıyı İstasyonu",
+    "difficulty": 1,
+    "name_en": "Coastal express",
+    "region_en": "Coastal Station",
+    "campaign_revision": 28
   },
   {
     "id": 6,
-    "name": "Sahil hattı",
-    "theme": 1,
+    "name": "Ormana giriş",
+    "theme": 0,
     "layout": 5,
-    "map_seed": 19102,
+    "map_seed": 281902,
     "train": [
       1,
       1,
@@ -605,7 +620,7 @@
       {
         "id": 0,
         "row": 0,
-        "col": 0,
+        "col": 2,
         "dx": 0,
         "dz": 1,
         "color": 3,
@@ -623,8 +638,8 @@
       {
         "id": 2,
         "row": 0,
-        "col": 2,
-        "dx": 1,
+        "col": 0,
+        "dx": -1,
         "dz": 0,
         "color": 1,
         "capacity": 4
@@ -632,8 +647,8 @@
       {
         "id": 3,
         "row": 1,
-        "col": 0,
-        "dx": 1,
+        "col": 2,
+        "dx": -1,
         "dz": 0,
         "color": 1,
         "capacity": 4
@@ -650,8 +665,8 @@
       {
         "id": 5,
         "row": 1,
-        "col": 2,
-        "dx": 1,
+        "col": 0,
+        "dx": -1,
         "dz": 0,
         "color": 1,
         "capacity": 3
@@ -659,8 +674,8 @@
       {
         "id": 6,
         "row": 2,
-        "col": 0,
-        "dx": 1,
+        "col": 2,
+        "dx": -1,
         "dz": 0,
         "color": 0,
         "capacity": 3
@@ -677,7 +692,7 @@
       {
         "id": 8,
         "row": 2,
-        "col": 2,
+        "col": 0,
         "dx": 0,
         "dz": 1,
         "color": 3,
@@ -691,7 +706,7 @@
     "guided": false,
     "dispatch_seconds": 0.32,
     "active_count": 0,
-    "lesson": "Önü açık vagona dokun · Üç yuvayı planla",
+    "lesson": "Her açık vagonu hemen gönderme.",
     "shape": 0,
     "mode": "rescue",
     "idle_seconds": 25,
@@ -716,15 +731,18 @@
       "rules_version": "0.19-physical-window",
       "generation_seed": 190822
     },
-    "region": "Kıyı İstasyonu",
-    "difficulty": 2
+    "region": "Çam Ormanı",
+    "difficulty": 2,
+    "name_en": "Into the forest",
+    "region_en": "Pine Forest",
+    "campaign_revision": 28
   },
   {
     "id": 7,
-    "name": "Deniz feneri",
-    "theme": 1,
-    "layout": 6,
-    "map_seed": 19119,
+    "name": "Kereste geçidi",
+    "theme": 0,
+    "layout": 7,
+    "map_seed": 282219,
     "train": [
       2,
       2,
@@ -847,7 +865,7 @@
     "guided": false,
     "dispatch_seconds": 0.32,
     "active_count": 0,
-    "lesson": "Önü açık vagona dokun · Üç yuvayı planla",
+    "lesson": "Yolu açarken bir yuva sakla.",
     "shape": 0,
     "mode": "rescue",
     "idle_seconds": 25,
@@ -872,15 +890,18 @@
       "rules_version": "0.19-physical-window",
       "generation_seed": 190959
     },
-    "region": "Kıyı İstasyonu",
-    "difficulty": 2
+    "region": "Çam Ormanı",
+    "difficulty": 2,
+    "name_en": "Timber passage",
+    "region_en": "Pine Forest",
+    "campaign_revision": 28
   },
   {
     "id": 8,
-    "name": "Mavi koy",
-    "theme": 1,
-    "layout": 7,
-    "map_seed": 19136,
+    "name": "Nehir kıvrımı",
+    "theme": 0,
+    "layout": 9,
+    "map_seed": 282536,
     "train": [
       4,
       4,
@@ -926,7 +947,7 @@
       {
         "id": 0,
         "row": 0,
-        "col": 0,
+        "col": 2,
         "dx": 0,
         "dz": 1,
         "color": 2,
@@ -944,7 +965,7 @@
       {
         "id": 2,
         "row": 0,
-        "col": 2,
+        "col": 0,
         "dx": 0,
         "dz": 1,
         "color": 4,
@@ -953,8 +974,8 @@
       {
         "id": 3,
         "row": 1,
-        "col": 0,
-        "dx": -1,
+        "col": 2,
+        "dx": 1,
         "dz": 0,
         "color": 4,
         "capacity": 5
@@ -971,7 +992,7 @@
       {
         "id": 5,
         "row": 1,
-        "col": 2,
+        "col": 0,
         "dx": 0,
         "dz": 1,
         "color": 1,
@@ -980,8 +1001,8 @@
       {
         "id": 6,
         "row": 2,
-        "col": 0,
-        "dx": 1,
+        "col": 2,
+        "dx": -1,
         "dz": 0,
         "color": 1,
         "capacity": 4
@@ -990,7 +1011,7 @@
         "id": 7,
         "row": 2,
         "col": 1,
-        "dx": 1,
+        "dx": -1,
         "dz": 0,
         "color": 2,
         "capacity": 4
@@ -998,7 +1019,7 @@
       {
         "id": 8,
         "row": 2,
-        "col": 2,
+        "col": 0,
         "dx": 0,
         "dz": 1,
         "color": 4,
@@ -1012,7 +1033,7 @@
     "guided": false,
     "dispatch_seconds": 0.32,
     "active_count": 0,
-    "lesson": "Önü açık vagona dokun · Üç yuvayı planla",
+    "lesson": "Yaklaşan renk için boşluk bırak.",
     "shape": 0,
     "mode": "rescue",
     "idle_seconds": 25,
@@ -1037,15 +1058,18 @@
       "rules_version": "0.19-physical-window",
       "generation_seed": 191096
     },
-    "region": "Kıyı İstasyonu",
-    "difficulty": 2
+    "region": "Çam Ormanı",
+    "difficulty": 2,
+    "name_en": "River bend",
+    "region_en": "Pine Forest",
+    "campaign_revision": 28
   },
   {
     "id": 9,
-    "name": "Liman sırası",
-    "theme": 1,
-    "layout": 8,
-    "map_seed": 19153,
+    "name": "Son açık yol",
+    "theme": 0,
+    "layout": 6,
+    "map_seed": 282853,
     "train": [
       3,
       3,
@@ -1177,7 +1201,7 @@
     "guided": false,
     "dispatch_seconds": 0.32,
     "active_count": 0,
-    "lesson": "Önü açık vagona dokun · Üç yuvayı planla",
+    "lesson": "İki hamle sonrasını düşün.",
     "shape": 0,
     "mode": "rescue",
     "idle_seconds": 25,
@@ -1202,15 +1226,18 @@
       "rules_version": "0.19-physical-window",
       "generation_seed": 191233
     },
-    "region": "Kıyı İstasyonu",
-    "difficulty": 2
+    "region": "Çam Ormanı",
+    "difficulty": 2,
+    "name_en": "Last open path",
+    "region_en": "Pine Forest",
+    "campaign_revision": 28
   },
   {
     "id": 10,
     "name": "İki tren, tek plan",
-    "theme": 1,
-    "layout": 9,
-    "map_seed": 19170,
+    "theme": 0,
+    "layout": 8,
+    "map_seed": 283170,
     "train": [
       0,
       0,
@@ -1241,7 +1268,7 @@
       {
         "id": 0,
         "row": 0,
-        "col": 0,
+        "col": 2,
         "dx": 0,
         "dz": -1,
         "color": 0,
@@ -1259,7 +1286,7 @@
       {
         "id": 2,
         "row": 0,
-        "col": 2,
+        "col": 0,
         "dx": 0,
         "dz": -1,
         "color": 1,
@@ -1268,7 +1295,7 @@
       {
         "id": 3,
         "row": 1,
-        "col": 0,
+        "col": 2,
         "dx": 0,
         "dz": 1,
         "color": 1,
@@ -1286,7 +1313,7 @@
       {
         "id": 5,
         "row": 1,
-        "col": 2,
+        "col": 0,
         "dx": 0,
         "dz": 1,
         "color": 0,
@@ -1300,7 +1327,7 @@
     "guided": true,
     "dispatch_seconds": 0.32,
     "active_count": 0,
-    "lesson": "Her tren ayrı ilerler. Yaklaşan renklere ortak yuvalarında yer ayır.",
+    "lesson": "İki tren ortak üç yuvayı kullanır.",
     "shape": 0,
     "mode": "rescue",
     "idle_seconds": 25,
@@ -1321,7 +1348,7 @@
       ],
       "rules_version": "0.23-parallel"
     },
-    "region": "İkiz Hatlar",
+    "region": "Çam Ormanı",
     "difficulty": 2,
     "train_count": 2,
     "wagon_streams": [
@@ -1349,66 +1376,45 @@
       1,
       1,
       1
-    ]
+    ],
+    "name_en": "Two trains, one plan",
+    "region_en": "Pine Forest",
+    "campaign_revision": 28
   },
   {
     "id": 11,
-    "name": "Elma bahçesi",
-    "theme": 2,
+    "name": "Dağda bir nefes",
+    "theme": 5,
     "layout": 10,
-    "map_seed": 19187,
+    "map_seed": 283487,
     "train": [
-      2,
-      2,
-      2,
-      2,
-      3,
-      3,
-      3,
-      3,
-      3,
+      1,
+      1,
+      1,
+      1,
       0,
       0,
       0,
-      0,
+      1,
+      1,
+      1,
       3,
       3,
       3,
       3,
-      3,
-      4,
-      4,
-      4,
-      4,
-      2,
-      2,
-      2,
-      2,
-      2,
+      1,
+      1,
+      1,
       0,
       0,
       0,
+      1,
+      1,
+      1,
+      1,
       0,
-      2,
-      2,
-      2,
-      2,
-      2,
-      4,
-      4,
-      4,
-      4,
-      3,
-      3,
-      3,
-      3,
-      3,
-      2,
-      2,
-      2,
-      2,
-      3,
-      3,
+      0,
+      0,
       3,
       3,
       3
@@ -1420,234 +1426,24 @@
         "col": 0,
         "dx": 0,
         "dz": 1,
-        "color": 2,
-        "capacity": 5
+        "color": 3,
+        "capacity": 3
       },
       {
         "id": 1,
         "row": 0,
         "col": 1,
-        "dx": -1,
-        "dz": 1,
-        "color": 3,
-        "capacity": 5
-      },
-      {
-        "id": 2,
-        "row": 0,
-        "col": 2,
-        "dx": 1,
-        "dz": 0,
-        "color": 3,
-        "capacity": 5
-      },
-      {
-        "id": 3,
-        "row": 1,
-        "col": 0,
         "dx": 0,
-        "dz": 1,
-        "color": 4,
-        "capacity": 4
-      },
-      {
-        "id": 4,
-        "row": 1,
-        "col": 1,
-        "dx": 1,
         "dz": -1,
-        "color": 3,
-        "capacity": 5
-      },
-      {
-        "id": 5,
-        "row": 1,
-        "col": 2,
-        "dx": 1,
-        "dz": 0,
         "color": 0,
-        "capacity": 4
-      },
-      {
-        "id": 6,
-        "row": 2,
-        "col": 0,
-        "dx": 1,
-        "dz": 1,
-        "color": 0,
-        "capacity": 4
-      },
-      {
-        "id": 7,
-        "row": 2,
-        "col": 1,
-        "dx": -1,
-        "dz": 1,
-        "color": 2,
-        "capacity": 5
-      },
-      {
-        "id": 8,
-        "row": 2,
-        "col": 2,
-        "dx": -1,
-        "dz": 1,
-        "color": 2,
-        "capacity": 4
-      },
-      {
-        "id": 9,
-        "row": 3,
-        "col": 0,
-        "dx": -1,
-        "dz": 0,
-        "color": 3,
-        "capacity": 5
-      },
-      {
-        "id": 10,
-        "row": 3,
-        "col": 1,
-        "dx": 1,
-        "dz": 1,
-        "color": 2,
-        "capacity": 4
-      },
-      {
-        "id": 11,
-        "row": 3,
-        "col": 2,
-        "dx": -1,
-        "dz": 0,
-        "color": 4,
-        "capacity": 4
-      }
-    ],
-    "rows": 4,
-    "cols": 3,
-    "speed": 4.9,
-    "par_laps": 3,
-    "guided": false,
-    "dispatch_seconds": 0.32,
-    "active_count": 0,
-    "lesson": "Önü açık vagona dokun · Üç yuvayı planla",
-    "shape": 0,
-    "mode": "rescue",
-    "idle_seconds": 25,
-    "subtitle": "MİNİK DOSTU KURTAR",
-    "collector_capacity": 5,
-    "match_scope": "zone",
-    "loading_fraction": 0.6,
-    "recoil_per_unit": 1.45,
-    "approach_speed": 0.9,
-    "design": {
-      "solution": [
-        10,
-        2,
-        6,
-        9,
-        3,
-        7,
-        5,
-        0,
-        11,
-        4,
-        8,
-        1
-      ],
-      "rules_version": "0.19-physical-window",
-      "generation_seed": 191507
-    },
-    "region": "Hasat Bahçesi",
-    "difficulty": 3
-  },
-  {
-    "id": 12,
-    "name": "Hasat yolu",
-    "theme": 2,
-    "layout": 11,
-    "map_seed": 19204,
-    "train": [
-      4,
-      4,
-      4,
-      4,
-      3,
-      3,
-      3,
-      3,
-      3,
-      4,
-      4,
-      4,
-      4,
-      1,
-      1,
-      1,
-      1,
-      1,
-      0,
-      0,
-      0,
-      0,
-      3,
-      3,
-      3,
-      3,
-      3,
-      0,
-      0,
-      0,
-      0,
-      3,
-      3,
-      3,
-      3,
-      3,
-      4,
-      4,
-      4,
-      4,
-      3,
-      3,
-      3,
-      3,
-      3,
-      1,
-      1,
-      1,
-      1,
-      3,
-      3,
-      3,
-      3,
-      3
-    ],
-    "parking": [
-      {
-        "id": 0,
-        "row": 0,
-        "col": 0,
-        "dx": -1,
-        "dz": 1,
-        "color": 3,
-        "capacity": 5
-      },
-      {
-        "id": 1,
-        "row": 0,
-        "col": 1,
-        "dx": -1,
-        "dz": 1,
-        "color": 4,
-        "capacity": 4
+        "capacity": 3
       },
       {
         "id": 2,
         "row": 0,
         "col": 2,
-        "dx": -1,
-        "dz": -1,
+        "dx": 1,
+        "dz": 0,
         "color": 1,
         "capacity": 4
       },
@@ -1656,6 +1452,189 @@
         "row": 1,
         "col": 0,
         "dx": 1,
+        "dz": 0,
+        "color": 1,
+        "capacity": 4
+      },
+      {
+        "id": 4,
+        "row": 1,
+        "col": 1,
+        "dx": 0,
+        "dz": 1,
+        "color": 1,
+        "capacity": 3
+      },
+      {
+        "id": 5,
+        "row": 1,
+        "col": 2,
+        "dx": 1,
+        "dz": 0,
+        "color": 1,
+        "capacity": 3
+      },
+      {
+        "id": 6,
+        "row": 2,
+        "col": 0,
+        "dx": 1,
+        "dz": 0,
+        "color": 0,
+        "capacity": 3
+      },
+      {
+        "id": 7,
+        "row": 2,
+        "col": 1,
+        "dx": 0,
+        "dz": 1,
+        "color": 0,
+        "capacity": 3
+      },
+      {
+        "id": 8,
+        "row": 2,
+        "col": 2,
+        "dx": 0,
+        "dz": 1,
+        "color": 3,
+        "capacity": 4
+      }
+    ],
+    "rows": 3,
+    "cols": 3,
+    "speed": 4.9,
+    "par_laps": 3,
+    "guided": false,
+    "dispatch_seconds": 0.32,
+    "active_count": 0,
+    "lesson": "Kısa bir hat: nefes al, akışı oku.",
+    "shape": 0,
+    "mode": "rescue",
+    "idle_seconds": 25,
+    "subtitle": "MİNİK DOSTU KURTAR",
+    "collector_capacity": 5,
+    "match_scope": "zone",
+    "loading_fraction": 0.57,
+    "recoil_per_unit": 1.45,
+    "approach_speed": 0.85,
+    "design": {
+      "solution": [
+        2,
+        7,
+        5,
+        8,
+        4,
+        1,
+        3,
+        6,
+        0
+      ],
+      "rules_version": "0.19-physical-window",
+      "generation_seed": 190822
+    },
+    "region": "Dağ Geçidi",
+    "difficulty": 2,
+    "name_en": "Mountain breather",
+    "region_en": "Mountain Pass",
+    "campaign_revision": 28
+  },
+  {
+    "id": 12,
+    "name": "Granit geçidi",
+    "theme": 5,
+    "layout": 12,
+    "map_seed": 283804,
+    "train": [
+      4,
+      4,
+      4,
+      4,
+      3,
+      3,
+      3,
+      3,
+      3,
+      4,
+      4,
+      4,
+      4,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      3,
+      3,
+      3,
+      3,
+      3,
+      0,
+      0,
+      0,
+      0,
+      3,
+      3,
+      3,
+      3,
+      3,
+      4,
+      4,
+      4,
+      4,
+      3,
+      3,
+      3,
+      3,
+      3,
+      1,
+      1,
+      1,
+      1,
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    "parking": [
+      {
+        "id": 0,
+        "row": 0,
+        "col": 2,
+        "dx": 1,
+        "dz": 1,
+        "color": 3,
+        "capacity": 5
+      },
+      {
+        "id": 1,
+        "row": 0,
+        "col": 1,
+        "dx": 1,
+        "dz": 1,
+        "color": 4,
+        "capacity": 4
+      },
+      {
+        "id": 2,
+        "row": 0,
+        "col": 0,
+        "dx": 1,
+        "dz": -1,
+        "color": 1,
+        "capacity": 4
+      },
+      {
+        "id": 3,
+        "row": 1,
+        "col": 2,
+        "dx": -1,
         "dz": 1,
         "color": 0,
         "capacity": 4,
@@ -1665,7 +1644,7 @@
         "id": 4,
         "row": 1,
         "col": 1,
-        "dx": -1,
+        "dx": 1,
         "dz": 0,
         "color": 3,
         "capacity": 5
@@ -1673,7 +1652,7 @@
       {
         "id": 5,
         "row": 1,
-        "col": 2,
+        "col": 0,
         "dx": 0,
         "dz": 1,
         "color": 3,
@@ -1682,8 +1661,8 @@
       {
         "id": 6,
         "row": 2,
-        "col": 0,
-        "dx": 1,
+        "col": 2,
+        "dx": -1,
         "dz": 1,
         "color": 3,
         "capacity": 5
@@ -1700,7 +1679,7 @@
       {
         "id": 8,
         "row": 2,
-        "col": 2,
+        "col": 0,
         "dx": 0,
         "dz": 1,
         "color": 1,
@@ -1709,8 +1688,8 @@
       {
         "id": 9,
         "row": 3,
-        "col": 0,
-        "dx": -1,
+        "col": 2,
+        "dx": 1,
         "dz": 0,
         "color": 4,
         "capacity": 4
@@ -1719,7 +1698,7 @@
         "id": 10,
         "row": 3,
         "col": 1,
-        "dx": -1,
+        "dx": 1,
         "dz": 0,
         "color": 4,
         "capacity": 4
@@ -1727,8 +1706,8 @@
       {
         "id": 11,
         "row": 3,
-        "col": 2,
-        "dx": 1,
+        "col": 0,
+        "dx": -1,
         "dz": 0,
         "color": 3,
         "capacity": 5,
@@ -1742,7 +1721,7 @@
     "guided": false,
     "dispatch_seconds": 0.32,
     "active_count": 0,
-    "lesson": "Önü açık vagona dokun · Üç yuvayı planla",
+    "lesson": "Sıra ve kapasiteyi birlikte planla.",
     "shape": 0,
     "mode": "rescue",
     "idle_seconds": 25,
@@ -1770,15 +1749,18 @@
       "rules_version": "0.19-physical-window",
       "generation_seed": 191644
     },
-    "region": "Hasat Bahçesi",
-    "difficulty": 3
+    "region": "Dağ Geçidi",
+    "difficulty": 3,
+    "name_en": "Granite passage",
+    "region_en": "Mountain Pass",
+    "campaign_revision": 28
   },
   {
     "id": 13,
-    "name": "Altın yaprak",
-    "theme": 2,
-    "layout": 12,
-    "map_seed": 19221,
+    "name": "Zirve dönüşü",
+    "theme": 5,
+    "layout": 14,
+    "map_seed": 284121,
     "train": [
       1,
       1,
@@ -1952,7 +1934,7 @@
     "guided": false,
     "dispatch_seconds": 0.32,
     "active_count": 0,
-    "lesson": "Önü açık vagona dokun · Üç yuvayı planla",
+    "lesson": "Yanlış renk boş yuvayı bağlar.",
     "shape": 0,
     "mode": "rescue",
     "idle_seconds": 25,
@@ -1980,15 +1962,18 @@
       "rules_version": "0.19-physical-window",
       "generation_seed": 191781
     },
-    "region": "Hasat Bahçesi",
-    "difficulty": 3
+    "region": "Dağ Geçidi",
+    "difficulty": 3,
+    "name_en": "Summit turn",
+    "region_en": "Mountain Pass",
+    "campaign_revision": 28
   },
   {
     "id": 14,
-    "name": "Renk kavşağı",
-    "theme": 2,
-    "layout": 13,
-    "map_seed": 19238,
+    "name": "Dar viraj",
+    "theme": 5,
+    "layout": 11,
+    "map_seed": 284438,
     "train": [
       4,
       4,
@@ -2061,8 +2046,8 @@
       {
         "id": 0,
         "row": 0,
-        "col": 0,
-        "dx": 1,
+        "col": 2,
+        "dx": -1,
         "dz": -1,
         "color": 1,
         "capacity": 5
@@ -2079,7 +2064,7 @@
       {
         "id": 2,
         "row": 0,
-        "col": 2,
+        "col": 0,
         "dx": 0,
         "dz": 1,
         "color": 0,
@@ -2088,7 +2073,7 @@
       {
         "id": 3,
         "row": 1,
-        "col": 0,
+        "col": 2,
         "dx": 0,
         "dz": -1,
         "color": 3,
@@ -2106,8 +2091,8 @@
       {
         "id": 5,
         "row": 1,
-        "col": 2,
-        "dx": -1,
+        "col": 0,
+        "dx": 1,
         "dz": -1,
         "color": 3,
         "capacity": 5
@@ -2115,8 +2100,8 @@
       {
         "id": 6,
         "row": 2,
-        "col": 0,
-        "dx": 1,
+        "col": 2,
+        "dx": -1,
         "dz": 0,
         "color": 1,
         "capacity": 5
@@ -2125,7 +2110,7 @@
         "id": 7,
         "row": 2,
         "col": 1,
-        "dx": 1,
+        "dx": -1,
         "dz": 0,
         "color": 4,
         "capacity": 5
@@ -2133,8 +2118,8 @@
       {
         "id": 8,
         "row": 2,
-        "col": 2,
-        "dx": 1,
+        "col": 0,
+        "dx": -1,
         "dz": -1,
         "color": 0,
         "capacity": 6
@@ -2142,8 +2127,8 @@
       {
         "id": 9,
         "row": 3,
-        "col": 0,
-        "dx": -1,
+        "col": 2,
+        "dx": 1,
         "dz": 1,
         "color": 4,
         "capacity": 5
@@ -2152,7 +2137,7 @@
         "id": 10,
         "row": 3,
         "col": 1,
-        "dx": 1,
+        "dx": -1,
         "dz": 1,
         "color": 1,
         "capacity": 5
@@ -2160,8 +2145,8 @@
       {
         "id": 11,
         "row": 3,
-        "col": 2,
-        "dx": -1,
+        "col": 0,
+        "dx": 1,
         "dz": 0,
         "color": 0,
         "capacity": 6
@@ -2174,7 +2159,7 @@
     "guided": false,
     "dispatch_seconds": 0.32,
     "active_count": 0,
-    "lesson": "Önü açık vagona dokun · Üç yuvayı planla",
+    "lesson": "Önce çıkışı, sonra rengi düşün.",
     "shape": 0,
     "mode": "rescue",
     "idle_seconds": 25,
@@ -2202,15 +2187,18 @@
       "rules_version": "0.19-physical-window",
       "generation_seed": 191918
     },
-    "region": "Hasat Bahçesi",
-    "difficulty": 3
+    "region": "Dağ Geçidi",
+    "difficulty": 3,
+    "name_en": "Tight bend",
+    "region_en": "Mountain Pass",
+    "campaign_revision": 28
   },
   {
     "id": 15,
-    "name": "Bahçe düğümü · 2 tren",
-    "theme": 2,
-    "layout": 14,
-    "map_seed": 19255,
+    "name": "İkiz dağ hatları",
+    "theme": 5,
+    "layout": 13,
+    "map_seed": 284755,
     "train": [
       2,
       2,
@@ -2398,7 +2386,7 @@
     "guided": false,
     "dispatch_seconds": 0.32,
     "active_count": 0,
-    "lesson": "Her tren ayrı ilerler. Yaklaşan renklere ortak yuvalarında yer ayır.",
+    "lesson": "İki hattın yaklaşan renklerini karşılaştır.",
     "shape": 0,
     "mode": "rescue",
     "idle_seconds": 25,
@@ -2426,7 +2414,7 @@
       "rules_version": "0.23-parallel",
       "generation_seed": 192055
     },
-    "region": "Hasat Bahçesi",
+    "region": "Dağ Geçidi",
     "difficulty": 3,
     "train_count": 2,
     "wagon_streams": [
@@ -2496,7 +2484,10 @@
       1,
       1,
       1
-    ]
+    ],
+    "name_en": "Twin mountain lines",
+    "region_en": "Mountain Pass",
+    "campaign_revision": 28
   },
   {
     "id": 16,
@@ -3958,7 +3949,7 @@
     "match_scope": "zone",
     "loading_fraction": 0.65,
     "recoil_per_unit": 1.45,
-    "approach_speed": 1.0,
+    "approach_speed": 1,
     "design": {
       "solution": [
         14,
@@ -4224,7 +4215,7 @@
     "match_scope": "zone",
     "loading_fraction": 0.65,
     "recoil_per_unit": 1.45,
-    "approach_speed": 1.0,
+    "approach_speed": 1,
     "design": {
       "solution": [
         6,
@@ -4492,7 +4483,7 @@
     "match_scope": "zone",
     "loading_fraction": 0.65,
     "recoil_per_unit": 1.45,
-    "approach_speed": 1.0,
+    "approach_speed": 1,
     "design": {
       "solution": [
         0,
@@ -4758,7 +4749,7 @@
     "match_scope": "zone",
     "loading_fraction": 0.65,
     "recoil_per_unit": 1.45,
-    "approach_speed": 1.0,
+    "approach_speed": 1,
     "design": {
       "solution": [
         9,
@@ -5420,7 +5411,7 @@
     "match_scope": "zone",
     "loading_fraction": 0.65,
     "recoil_per_unit": 1.45,
-    "approach_speed": 1.0,
+    "approach_speed": 1,
     "design": {
       "solution": [
         14,
@@ -5703,7 +5694,7 @@
     "match_scope": "zone",
     "loading_fraction": 0.65,
     "recoil_per_unit": 1.45,
-    "approach_speed": 1.0,
+    "approach_speed": 1,
     "design": {
       "solution": [
         13,
@@ -6380,7 +6371,7 @@
     "match_scope": "zone",
     "loading_fraction": 0.65,
     "recoil_per_unit": 1.45,
-    "approach_speed": 1.0,
+    "approach_speed": 1,
     "design": {
       "solution": [
         0,
@@ -6678,7 +6669,7 @@
     "match_scope": "zone",
     "loading_fraction": 0.65,
     "recoil_per_unit": 1.45,
-    "approach_speed": 1.0,
+    "approach_speed": 1,
     "design": {
       "solution": [
         13,

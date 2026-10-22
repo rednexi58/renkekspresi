@@ -23,6 +23,7 @@ workflows:
           set -euo pipefail
           .ci-tools/Godot.app/Contents/MacOS/Godot --headless --path Godot --editor --import --quit
           .ci-tools/Godot.app/Contents/MacOS/Godot --headless --path Godot --script res://tests/test_slots_scores_v027.gd
+          .ci-tools/Godot.app/Contents/MacOS/Godot --headless --path Godot --script res://tests/test_regions_v028.gd
       - name: Export native Xcode project
         script: |
           set -euo pipefail

@@ -113,6 +113,9 @@ func set_level(level: Dictionary,index: int) -> void:
  rescue=level.get("mode","loop")=="rescue";stage_kind=level.get("subtitle","RENK BULMACASI");danger_red=false
  level_label.text="%s · %02d / 100"%[("COLOR EXPRESS" if Locale.language=="en" else str(level.get("region","TREN YOLCULUĞU")).to_upper()),int(level.id)];level_name.text=("Level %d · %d trains"%[int(level.id),int(level.get("train_count",1))]) if Locale.language=="en" else level.name;combo_count=0;lesson=level.lesson
  progress.add_theme_stylebox_override("fill",style(Color("efad57") if rescue else Color("d7b77b"),4))
+ if int(level.id)<=15:
+  level_label.text="%s · %02d / 100"%[str(level.get("region_en",level.region)) if Locale.language=="en" else str(level.region),int(level.id)]
+  level_name.text=str(level.get("name_en",level.name)) if Locale.language=="en" else str(level.name)
  toast_label.modulate.a=0
  if is_instance_valid(toast_tween):toast_tween.kill()
 func update_state(rules: GameRules,_busy: bool=false) -> void:

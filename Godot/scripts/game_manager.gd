@@ -253,6 +253,19 @@ func finish() -> void:
   for c in range(5):
    world.burst(Vector3(-3+c*1.5,1,0),c,true)
   ui.show_modal(Locale.t("Minik dost güvende!"),Locale.t("%s\n\n%d vagon · %.1f saniye\n%s") % ["★ ".repeat(stars)+"☆ ".repeat(3-stars),rules.total,rules.elapsed,Locale.t("Bir sonraki durak seni bekliyor.") if level_index<levels.count()-1 else Locale.t("100 durakta bütün dostları kurtardın!")])
+  if level_index<15:
+   var next_region=["Çam Ormanı","Dağ Geçidi","Yeni hatlar"][mini(2,int(level_index/5))]
+   if Locale.language=="en":next_region=["Pine Forest","Mountain Pass","New routes"][mini(2,int(level_index/5))]
+   var remaining=5-(level_index%5+1)
+   var journey=("Next region unlocked: " if Locale.language=="en" else "Yeni bölge açıldı: ")+next_region if remaining==0 else ("%d levels to %s" if Locale.language=="en" else "%s için %d bölüm")%([remaining,next_region] if Locale.language=="en" else [next_region,remaining])
+   var panel=ui.show_modal("ROUTE COMPLETE" if Locale.language=="en" else "HAT TAMAMLANDI","★ ".repeat(stars)+"☆ ".repeat(3-stars))
+   var stats=HBoxContainer.new();stats.add_theme_constant_override("separation",16);panel.add_child(stats)
+   for text in [("TIME\n%.1f s" if Locale.language=="en" else "SÜRE\n%.1f sn")%rules.elapsed,("MOVES\n%d" if Locale.language=="en" else "HAMLE\n%d")%rules.taps,("CLEARED\n%d" if Locale.language=="en" else "TEMİZLENEN\n%d")%rules.total]:
+    var card=PanelContainer.new();card.size_flags_horizontal=Control.SIZE_EXPAND_FILL;card.add_theme_stylebox_override("panel",ui.style(Color("e8efe9"),14,12));stats.add_child(card)
+    var text_label=ui.label(text,19);text_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER;card.add_child(text_label)
+   panel.add_child(ui.label(journey,20))
+   var bar=ProgressBar.new();bar.max_value=5;bar.value=0;bar.show_percentage=false;bar.custom_minimum_size.y=12;bar.add_theme_stylebox_override("fill",ui.style(Color("c5a16a"),6));panel.add_child(bar)
+   ui.create_tween().tween_property(bar,"value",float(level_index%5+1),.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
   if level_index < levels.count()-1:
    ui.modal_button(Locale.t("Sıradaki durak  →"),func():load_level(level_index+1),true)
   else:
