@@ -12,7 +12,7 @@ workflows:
         - renk_ekspresi_ios
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.bedodrive.trainjam3d
+        bundle_identifier: com.bedodrive.renkekspresi
     scripts:
       - name: Validate build settings
         script: python3 ci/prepare_ios.py
