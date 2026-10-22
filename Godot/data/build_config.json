@@ -1,0 +1,6 @@
+{
+  "test_tools": true,
+  "ads_provider": "simulation",
+  "version": "0.27.0",
+  "purchases_provider": "simulation"
+}
