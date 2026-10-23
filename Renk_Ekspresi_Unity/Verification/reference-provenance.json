@@ -1,0 +1,12 @@
+{
+  "source_package": "Renk_Ekspresi_v034.zip",
+  "source_sha256": "efda7af3e16fee488d65008b8bc5bccef64a671a5bc2c7352f7c5e373a733544",
+  "source_game_version": "0.34.0",
+  "reference_engine": "Godot 4.5.1 stable",
+  "unity_target_editor": "6000.0.60f1",
+  "reference_date": "2026-10-23",
+  "files": {
+    "godot_reference.json": "386d518dd83fb004c48e62fb2992ab1792841557be3e2e50d625b6ea5a2ff294",
+    "godot_edge_reference.json": "fe806d151b81eef78281317e120a1685855eabaee993730ebfb0faadb601ed44"
+  }
+}

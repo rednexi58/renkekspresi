@@ -1,0 +1,4 @@
+<linker>
+  <!-- JSON-instantiated fields and runtime-created components must survive IL2CPP. -->
+  <assembly fullname="Assembly-CSharp" preserve="all" />
+</linker>

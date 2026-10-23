@@ -1,0 +1,1 @@
+PASS: 100 valid campaigns and routes; 6 valid train meshes (139,520 triangles across all six assets); all referenced fonts, icons, audio and shaders present.

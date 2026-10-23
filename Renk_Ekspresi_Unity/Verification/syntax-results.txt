@@ -1,0 +1,1 @@
+Syntax checks: 68, errors: 0. This checks C# parsing only, NOT Unity API binding, shaders, scene import, or a player build.
