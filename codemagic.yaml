@@ -1,5 +1,3 @@
-# Unity iOS upload workflow. Build/sign the IPA in Unity Build Automation first.
-# This replaces the active Godot workflow; the previous YAML is archived under ci/legacy_godot.yaml.
 workflows:
   renk-ekspresi-unity-testflight:
     name: Renk Ekspresi - Unity TestFlight
@@ -15,17 +13,42 @@ workflows:
       - name: Download and verify Unity iOS IPA
         script: |
           set -euo pipefail
-          : "${UNITY_IOS_IPA_URL:?Set UNITY_IOS_IPA_URL to the download link of a signed Unity iOS IPA.}"
           mkdir -p build/ios/ipa
-          curl --fail --location --retry 2 --silent --show-error \
-            --output build/ios/ipa/RenkEkspresiUnity.ipa "$UNITY_IOS_IPA_URL"
+          python3 - <<'PY'
+          import json
+          import shutil
+          import urllib.request
+          from pathlib import Path
+
+          share_id = "x1eT8Jz72cyGueUKDw-1Hav4CH1xo6W7PDsbow1O4nw"
+          api_url = f"https://build-automation.services.api.unity.com/v2/shares/{share_id}"
+
+          with urllib.request.urlopen(api_url, timeout=30) as response:
+              build = json.load(response)
+
+          if build.get("buildStatus") != "success":
+              raise SystemExit("Unity build is not successful")
+          if build.get("projectVersion", {}).get("bundleId") != "com.bedogames.renkekspresi":
+              raise SystemExit("Unity IPA has the wrong bundle ID")
+
+          artifact = build["links"]["download_primary"]
+          if artifact.get("meta", {}).get("type") != "IPA":
+              raise SystemExit("Unity primary artifact is not an IPA")
+
+          output = Path("build/ios/ipa/RenkEkspresiUnity.ipa")
+          with urllib.request.urlopen(artifact["href"], timeout=180) as source:
+              with output.open("wb") as destination:
+                  shutil.copyfileobj(source, destination)
+
+          if output.stat().st_size < 100_000:
+              raise SystemExit("Downloaded IPA is unexpectedly small")
+          print(f"Downloaded Unity build #{build['build']} ({output.stat().st_size} bytes)")
+          PY
           python3 ci/verify_unity_ipa.py build/ios/ipa/RenkEkspresiUnity.ipa
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
       app_store_connect:
         auth: integration
-        # Upload to App Store Connect/TestFlight. Internal testers can use the
-        # processed build; external beta review requires complete test info.
         submit_to_testflight: false
         submit_to_app_store: false
