@@ -1,8 +1,9 @@
-# Native Godot playtest. Requires Apple signing setup. Not a verified IPA.
+# Unity iOS upload workflow. Build/sign the IPA in Unity Build Automation first.
+# This replaces the active Godot workflow; the previous YAML is archived under ci/legacy_godot.yaml.
 workflows:
-  renk-ekspresi-ios-playtest:
-    name: Renk Ekspresi - iOS playtest
-    max_build_duration: 120
+  renk-ekspresi-unity-testflight:
+    name: Renk Ekspresi - Unity TestFlight
+    max_build_duration: 60
     instance_type: mac_mini_m2
     integrations:
       app_store_connect: Apple AppStore
@@ -10,35 +11,21 @@ workflows:
       xcode: latest
       groups:
         - renk_ekspresi_ios
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.bedogames.renkekspresi
     scripts:
-      - name: Validate build settings
-        script: python3 ci/prepare_ios.py
-      - name: Install Godot and iOS export template
-        script: bash ci/install_godot_macos.sh
-      - name: Import and validate the project
+      - name: Download and verify Unity iOS IPA
         script: |
           set -euo pipefail
-          .ci-tools/Godot.app/Contents/MacOS/Godot --headless --path Godot --editor --import --quit
-          .ci-tools/Godot.app/Contents/MacOS/Godot --headless --path Godot --script res://tests/test_slots_scores_v027.gd
-          .ci-tools/Godot.app/Contents/MacOS/Godot --headless --path Godot --script res://tests/test_regions_v028.gd
-      - name: Export native Xcode project
-        script: |
-          set -euo pipefail
-          mkdir -p build/ios
-          .ci-tools/Godot.app/Contents/MacOS/Godot --headless --path Godot --export-release iOS ../build/ios/RenkEkspresi.xcodeproj
-          test -d build/ios/RenkEkspresi.xcodeproj
-      - name: Apply provisioning profiles
-        script: xcode-project use-profiles
-      - name: Build signed IPA
-        script: xcode-project build-ipa --project build/ios/RenkEkspresi.xcodeproj --scheme RenkEkspresi
+          : "${UNITY_IOS_IPA_URL:?Set UNITY_IOS_IPA_URL to the download link of a signed Unity iOS IPA.}"
+          mkdir -p build/ios/ipa
+          curl --fail --location --retry 2 --silent --show-error \
+            --output build/ios/ipa/RenkEkspresiUnity.ipa "$UNITY_IOS_IPA_URL"
+          python3 ci/verify_unity_ipa.py build/ios/ipa/RenkEkspresiUnity.ipa
     artifacts:
       - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: true
+        # Upload to App Store Connect/TestFlight. Internal testers can use the
+        # processed build; external beta review requires complete test info.
+        submit_to_testflight: false
         submit_to_app_store: false

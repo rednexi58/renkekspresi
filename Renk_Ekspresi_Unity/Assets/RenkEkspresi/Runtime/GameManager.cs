@@ -252,7 +252,9 @@ namespace RenkEkspresi
             int stamp = generation;
             string endpoint = "https://www.gstatic.com/generate_204";
 #if UNITY_WEBGL && !UNITY_EDITOR
-  endpoint=new Uri(new Uri(Application.absoluteURL),"online.txt?t="+DateTime.UtcNow.Ticks).ToString();
+  // Build Automation does not invoke ProjectTools.BuildWeb(), so online.txt is absent
+  // from its WebGL artifact. The HTML entry point is present in either build path.
+  endpoint=new Uri(new Uri(Application.absoluteURL),"index.html?t="+DateTime.UtcNow.Ticks).ToString();
 #endif
             using (var request = UnityWebRequest.Get(endpoint))
             {
