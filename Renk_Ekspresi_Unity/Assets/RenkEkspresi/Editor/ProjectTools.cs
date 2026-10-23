@@ -119,6 +119,40 @@ namespace RenkEkspresi.Editor
             EditorWindow.GetWindow<LevelInspector>("Renk · Levels");
         }
     }
+    // Unity Build Automation invokes BuildPipeline directly, rather than BuildIOS().
+    // Apply the iOS build number for every entry point, before Xcode export/signing.
+    public sealed class IosBuildVersionGuard : IPreprocessBuildWithReport
+    {
+        public int callbackOrder => int.MaxValue;
+
+        public void OnPreprocessBuild(BuildReport report)
+        {
+            if (report.summary.platform != BuildTarget.iOS)
+                return;
+
+            int number;
+            string requested = Environment.GetEnvironmentVariable("RENK_EKSPRESI_BUILD_NUMBER");
+            string cloudBuild = Environment.GetEnvironmentVariable("UCB_BUILD_NUMBER");
+            if (!string.IsNullOrWhiteSpace(requested))
+            {
+                if (!int.TryParse(requested, out number) || number < 1)
+                    throw new BuildFailedException("RENK_EKSPRESI_BUILD_NUMBER must be a positive integer.");
+            }
+            else if (!string.IsNullOrWhiteSpace(cloudBuild))
+            {
+                if (!int.TryParse(cloudBuild, out number) || number < 1 || number > int.MaxValue - 40)
+                    throw new BuildFailedException("UCB_BUILD_NUMBER must be a valid positive integer.");
+                number += 40;
+            }
+            else if (!int.TryParse(PlayerSettings.iOS.buildNumber, out number) || number < 1)
+            {
+                number = 41;
+            }
+
+            PlayerSettings.iOS.buildNumber = number.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            Debug.Log("[Renk Ekspresi] iOS CFBundleVersion = " + PlayerSettings.iOS.buildNumber);
+        }
+    }
     public sealed class LevelInspector : EditorWindow
     {
         int level = 1;
