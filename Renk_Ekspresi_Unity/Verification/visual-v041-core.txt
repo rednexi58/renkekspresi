@@ -1,0 +1,133 @@
+
+Welcome to .NET 8.0!
+---------------------
+SDK Version: 8.0.408
+
+----------------
+Installed an ASP.NET Core HTTPS development certificate.
+To trust the certificate, view the instructions: https://aka.ms/dotnet-https-linux
+
+----------------
+Write your first app: https://aka.ms/dotnet-hello-world
+Find out what's new: https://aka.ms/dotnet-whats-new
+Explore documentation: https://aka.ms/dotnet-docs
+Report issues and find source on GitHub: https://github.com/dotnet/core
+Use 'dotnet --help' to see available commands or visit: https://aka.ms/dotnet-cli
+--------------------------------------------------------------------------------------
+Parity level 1: won 9.78s
+Parity level 2: won 9.78s
+Parity level 3: won 11.05s
+Parity level 4: won 11.08s
+Parity level 5: won 13.00s
+Parity level 6: won 19.13s
+Parity level 7: won 18.93s
+Parity level 8: won 23.87s
+Parity level 9: won 24.12s
+Parity level 10: won 11.58s
+Parity level 11: won 20.02s
+Parity level 12: won 30.32s
+Parity level 13: won 30.12s
+Parity level 14: won 35.80s
+Parity level 15: won 20.27s
+Parity level 16: won 36.42s
+Parity level 17: won 37.05s
+Parity level 18: won 36.20s
+Parity level 19: won 42.02s
+Parity level 20: won 22.72s
+Parity level 21: won 41.82s
+Parity level 22: won 41.82s
+Parity level 23: won 41.82s
+Parity level 24: won 40.77s
+Parity level 25: won 24.17s
+Parity level 26: won 48.57s
+Parity level 27: won 50.95s
+Parity level 28: won 25.27s
+Parity level 29: won 54.95s
+Parity level 30: won 55.45s
+Parity level 31: won 28.35s
+Parity level 32: won 28.42s
+Parity level 33: won 28.35s
+Parity level 34: won 28.42s
+Parity level 35: won 24.70s
+Parity level 36: won 28.40s
+Parity level 37: won 28.30s
+Parity level 38: won 28.30s
+Parity level 39: won 28.30s
+Parity level 40: won 24.70s
+Parity level 41: won 28.27s
+Parity level 42: won 28.25s
+Parity level 43: won 28.25s
+Parity level 44: won 28.32s
+Parity level 45: won 25.42s
+Parity level 46: won 31.30s
+Parity level 47: won 31.30s
+Parity level 48: won 31.27s
+Parity level 49: won 31.27s
+Parity level 50: won 25.22s
+Parity level 51: won 25.47s
+Parity level 52: won 25.47s
+Parity level 53: won 25.57s
+Parity level 54: won 62.10s
+Parity level 55: won 25.47s
+Parity level 56: won 25.55s
+Parity level 57: won 25.47s
+Parity level 58: won 62.10s
+Parity level 59: won 27.30s
+Parity level 60: won 27.42s
+Parity level 61: won 26.97s
+Parity level 62: won 27.17s
+Parity level 63: won 28.20s
+Parity level 64: won 34.17s
+Parity level 65: won 27.35s
+Parity level 66: won 27.02s
+Parity level 67: won 27.45s
+Parity level 68: won 34.02s
+Parity level 69: won 27.52s
+Parity level 70: won 27.42s
+Parity level 71: won 25.62s
+Parity level 72: won 25.62s
+Parity level 73: won 26.27s
+Parity level 74: won 36.90s
+Parity level 75: won 26.27s
+Parity level 76: won 26.27s
+Parity level 77: won 26.27s
+Parity level 78: won 36.85s
+Parity level 79: won 26.42s
+Parity level 80: won 26.27s
+Parity level 81: won 26.27s
+Parity level 82: won 26.37s
+Parity level 83: won 26.65s
+Parity level 84: won 29.90s
+Parity level 85: won 26.70s
+Parity level 86: won 26.60s
+Parity level 87: won 27.77s
+Parity level 88: won 32.05s
+Parity level 89: won 27.77s
+Parity level 90: won 27.82s
+Parity level 91: won 28.75s
+Parity level 92: won 27.82s
+Parity level 93: won 28.72s
+Parity level 94: won 31.75s
+Parity level 95: won 27.75s
+Parity level 96: won 27.87s
+Parity level 97: won 27.77s
+Parity level 98: won 31.90s
+Parity level 99: won 30.22s
+Parity level 100: won 28.20s
+Parity level 1: won 9.93s
+Parity level 1: won 9.23s
+Parity level 10: won 11.58s
+Parity level 10: won 15.70s
+Parity level 20: lost 18.30s
+Parity level 20: won 46.32s
+Parity level 31: lost 18.03s
+Parity level 31: lost 38.22s
+Parity level 50: lost 12.18s
+Parity level 50: won 40.17s
+Parity level 70: lost 14.35s
+Parity level 70: won 49.62s
+Parity level 90: lost 14.55s
+Parity level 90: lost 29.92s
+Parity level 100: lost 14.88s
+Parity level 100: lost 28.27s
+PASS: 100 campaign + 16 edge traces, 4471 snapshots, 100 idle-loss runs; 380199 assertions.

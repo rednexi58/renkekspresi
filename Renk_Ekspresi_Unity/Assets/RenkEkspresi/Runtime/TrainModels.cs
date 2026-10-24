@@ -42,7 +42,7 @@ namespace RenkEkspresi
                     surface.Add(new Vector2(p.metallic, 1 - p.roughness));
                 }
             }
-            var mesh = new Mesh { name = color < 0 ? "ExpressLocomotive" : "PaintedWagon" + color, indexFormat = IndexFormat.UInt32 };
+            var mesh = new Mesh { name = color < 0 ? "ExpressLocomotive" : "PaintedWagon" + color, indexFormat = v.Count > 65535 ? IndexFormat.UInt32 : IndexFormat.UInt16 };
             mesh.SetVertices(v);
             mesh.SetNormals(n);
             mesh.SetColors(colors);
@@ -54,9 +54,7 @@ namespace RenkEkspresi
         }
         public static GameObject Create(int color, Transform parent)
         {
-            var prefab = Resources.Load<GameObject>("Prefabs/" + (color < 0 ? "Locomotive" : "Wagon" + color));
-            if (prefab)
-                return UnityEngine.Object.Instantiate(prefab, parent, false);
+            // Use the current source meshes; an older cached prefab must not override revised art.
             if (!paint)
                 paint = new Material(Resources.Load<Shader>("PaintedTrain")) { name = "Enamel paint", enableInstancing = true };
             var go = new GameObject(color < 0 ? "Locomotive" : "Wagon");

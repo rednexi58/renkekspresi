@@ -1,0 +1,3 @@
+PASS: 18240 mesh triangles; correct normals; 1546 arrow/blocker pairs; 600 camera layout combinations.
+Mesh vertex counts: {'Locomotive': 5068, 'Wagon0': 4694, 'Wagon1': 4694, 'Wagon2': 4694, 'Wagon3': 4694, 'Wagon4': 4694}
+Minimum projected row pitch: 34.2 pixels on compact safe-area fixture. Actual touch/FPS remains a device test.

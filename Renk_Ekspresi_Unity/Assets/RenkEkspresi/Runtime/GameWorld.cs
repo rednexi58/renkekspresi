@@ -12,17 +12,18 @@ namespace RenkEkspresi
     }
     public sealed class GameWorld : MonoBehaviour
     {
-        public Camera Camera; public RailSpline Rail; public Vector3[] SlotPositions = new Vector3[5];
-        public static readonly Color[] Palette = { Hex("E85852"), Hex("448DDF"), Hex("F0C347"), Hex("53B689"), Hex("A87DDD") };
-        static readonly string[] Grounds = { "9EBCA3", "D7CAAF", "B9B98D", "B2BDC1", "C9A083", "D2DFDF" };
+        public Camera Camera, YardCamera; public RailSpline Rail; public Vector3[] SlotPositions = new Vector3[5];
+        public static readonly Color[] Palette = { Hex("E65D52"), Hex("348CD3"), Hex("F2C34D"), Hex("39A985"), Hex("9868CD") };
+        static readonly string[] Grounds = { "A8C5B3", "E6D8B9", "B7C2A1", "C1CCCF", "D4AE92", "DBE4E7" };
         readonly Dictionary<int, GameObject> wagons = new Dictionary<int, GameObject>();
         readonly Dictionary<int, Transform> cards = new Dictionary<int, Transform>();
-        readonly Dictionary<int, TextMesh> captions = new Dictionary<int, TextMesh>();
+        const int YardLayer = 30;
+        readonly List<LineRenderer> loadingTracks = new List<LineRenderer>();
         readonly List<GameObject> engines = new List<GameObject>();
         readonly List<GameObject> stationTokens = new List<GameObject>();
         readonly List<int> stationColors = new List<int>();
         readonly Dictionary<string, Material> materials = new Dictionary<string, Material>();
-        Transform content, scenery; Font font; Vector3[] cardOrigins; LevelData level;
+        Transform content, scenery, yard; Vector3[] cardOrigins; LevelData level;
         public static Color Hex(string value)
         {
             Color c;
@@ -53,7 +54,7 @@ namespace RenkEkspresi
         }
         public void Setup()
         {
-            font = Resources.Load<Font>("UI/Interface-Bold");
+
             var go = new GameObject("Fixed portrait camera");
             Camera = go.AddComponent<Camera>();
             Camera.orthographic = true;
@@ -62,12 +63,21 @@ namespace RenkEkspresi
             Camera.nearClipPlane = .1f;
             Camera.farClipPlane = 200;
             go.AddComponent<AudioListener>();
+            Camera.cullingMask = ~(1 << YardLayer);
+            YardCamera = new GameObject("Fixed close-up puzzle camera").AddComponent<Camera>();
+            YardCamera.orthographic = true;
+            YardCamera.clearFlags = CameraClearFlags.SolidColor;
+            YardCamera.backgroundColor = Hex("EDECE3");
+            YardCamera.cullingMask = 1 << YardLayer;
+            YardCamera.nearClipPlane = .1f;
+            YardCamera.farClipPlane = 160;
+            YardCamera.depth = Camera.depth + 1;
             var sun = new GameObject("Soft morning sun").AddComponent<Light>();
             sun.type = LightType.Directional;
-            sun.intensity = 1.15f;
+            sun.intensity = 1.05f;
             sun.color = Hex("FFF0D9");
             sun.shadows = LightShadows.Soft;
-            sun.shadowStrength = .55f;
+            sun.shadowStrength = .32f;
             sun.transform.rotation = Quaternion.Euler(52, -32, 0);
             RenderSettings.ambientMode = AmbientMode.Trilight;
             RenderSettings.ambientSkyColor = Hex("D8E4EF");
@@ -87,8 +97,10 @@ namespace RenkEkspresi
             scenery.SetParent(content, false);
             wagons.Clear();
             cards.Clear();
-            captions.Clear();
+            yard = new GameObject("Dispatch yard").transform;
+            yard.SetParent(content, false);
             engines.Clear();
+            loadingTracks.Clear();
             stationTokens.Clear();
             stationColors.Clear();
             Shape("Terrain", PrimitiveType.Cube, new Vector3(0, -.4f, 5), new Vector3(90, .7f, 90), Hex(Grounds[data.theme]));
@@ -99,6 +111,21 @@ namespace RenkEkspresi
                     var tie = Shape("Sleeper", PrimitiveType.Cube, Rail.Point(lane, d) + Vector3.up * .08f, new Vector3(1.18f, .12f, .21f), Hex("685949"));
                     tie.transform.rotation = Quaternion.LookRotation(Rail.Direction(lane, d));
                 }
+                var bed = new GameObject("Continuous stone track bed").AddComponent<LineRenderer>();
+                bed.transform.SetParent(scenery, false);
+                bed.useWorldSpace=false; bed.positionCount=Rail.Routes[lane].points.Length;
+                bed.startWidth=bed.endWidth=1.55f; bed.alignment=LineAlignment.TransformZ;
+                bed.transform.rotation=Quaternion.Euler(-90,0,0);
+                bed.sharedMaterial=Mat(Hex("8E9C98"));
+                for(int i=0;i<bed.positionCount;i++) bed.SetPosition(i,bed.transform.InverseTransformPoint(Rail.Routes[lane].points[i]+Vector3.up*.015f));
+                var active = new GameObject("Physical matching track").AddComponent<LineRenderer>();
+                active.transform.SetParent(content,false);active.positionCount=32;active.useWorldSpace=true;
+                active.startWidth=active.endWidth=1.27f;active.alignment=LineAlignment.TransformZ;
+                active.transform.rotation=Quaternion.Euler(-90,0,0);
+                active.sharedMaterial=Mat(Hex("69B9AE"));
+                float end=data.track_length-.9f,start=.8f+(end-.8f)*(float)data.loading_fraction;
+                for(int i=0;i<32;i++)active.SetPosition(i,Rail.Point(lane,Mathf.Lerp(start,end-.2f,i/31f))+Vector3.up*.035f);
+                active.gameObject.SetActive(false);loadingTracks.Add(active);
                 foreach (float side in new[] { -.37f, .37f })
                 {
                     var line = new GameObject("Steel rail").AddComponent<LineRenderer>();
@@ -124,62 +151,62 @@ namespace RenkEkspresi
                     Shape("Depot pier", PrimitiveType.Cube, Vector3.right * side * .9f + Vector3.up * .8f, new Vector3(.5f, 1.6f, 1.6f), Hex("737F7B"), depot);
                 Shape("Depot roof", PrimitiveType.Cube, Vector3.up * 1.7f, new Vector3(2.4f, .35f, 1.8f), Hex("445D63"), depot);
             }
-            Shape("Station platform", PrimitiveType.Cube, new Vector3(0, .05f, 0), new Vector3(14.2f, .25f, 2), Hex("788C8B"));
+            Shape("Station platform", PrimitiveType.Cube, new Vector3(0, .05f, 0), new Vector3(15.8f, .28f, 2.4f), Hex("D3D8CD"), yard);
             for (int i = 0; i < 5; i++)
             {
                 SlotPositions[i] = new Vector3((i - 2) * 2.65f, .3f, 0);
-                Shape("Brass station berth", PrimitiveType.Cube, SlotPositions[i], new Vector3(2.15f, .16f, 1.5f), Hex("C8B98F"));
+                Shape("Brass station berth", PrimitiveType.Cube, SlotPositions[i], new Vector3(2.3f, .12f, 1.65f), Hex("7B9693"), yard);
                 stationTokens.Add(null);
                 stationColors.Add(-1);
             }
             cardOrigins = new Vector3[data.parking.Length];
-            Shape("Puzzle yard", PrimitiveType.Cube, new Vector3(0, -.02f, -4.2f - (data.rows - 1) * 1.175f), new Vector3(14.2f, .14f, data.rows * 2.35f + .8f), Hex("718789"));
+            Shape("Puzzle yard", PrimitiveType.Cube, new Vector3(0, -.02f, -4.2f - (data.rows - 1) * 1.175f), new Vector3(16.4f, .18f, data.rows * 2.35f + 1.6f), Hex("DBDFD6"), yard);
             foreach (var c in data.parking)
             {
                 var root = new GameObject("Collector " + c.id);
-                root.transform.SetParent(content, false);
+                root.transform.SetParent(yard, false);
                 root.transform.localPosition = new Vector3((c.col - (data.cols - 1) * .5f) * 4.2f, .12f, -4.2f - c.row * 2.35f);
                 cardOrigins[c.id] = root.transform.localPosition;
                 var model = TrainModels.Create(c.color, root.transform);
-                model.transform.localScale = Vector3.one * 1.25f;
-                model.transform.localRotation = Quaternion.LookRotation(new Vector3(c.dx, 0, -c.dz));
+                model.transform.localScale = Vector3.one * 1.27f;
+                model.transform.localRotation = Quaternion.LookRotation(new Vector3(c.dx * 4.2f, 0, -c.dz * 2.35f));
                 var hit = root.AddComponent<BoxCollider>();
                 hit.center = Vector3.up * .7f;
                 hit.size = new Vector3(3.6f, 1.7f, 2);
                 root.AddComponent<CardTag>().Id = c.id;
-                var caption = new GameObject("Arrow and capacity").AddComponent<TextMesh>();
-                caption.transform.SetParent(root.transform, false);
-                caption.transform.localPosition = new Vector3(0, 2.1f, 0);
-                caption.font = font;
-                caption.GetComponent<Renderer>().sharedMaterial = font.material;
-                caption.fontSize = 54;
-                caption.characterSize = .045f;
-                caption.anchor = TextAnchor.MiddleCenter;
-                caption.color = Color.white;
-                caption.transform.rotation = Quaternion.Euler(65, 0, 0);
-                captions[c.id] = caption;
                 cards[c.id] = root.transform;
             }
             for (int i = 0; i < data.train.Length; i++)
                 wagons[i] = TrainModels.Create(data.train[i], content);
+            // Visible rails under each collector establish a consistent, readable grid.
+            for (int row = 0; row < data.rows; row++)
+                for (int col = 0; col < data.cols; col++)
+                    Shape("Yard paving", PrimitiveType.Cube,
+                        new Vector3((col - (data.cols - 1) * .5f) * 4.2f, .10f, -4.2f - row * 2.35f),
+                        new Vector3(3.85f, .04f, 2.12f), Hex("EDEEE6"), yard);
+            SetLayer(yard.gameObject, YardLayer);
             Decorate();
             BuildFriend(Rail.Point(0, Rail.Routes[0].length) + new Vector3(1.8f, 0, 0));
             Fit();
             StaticBatchingUtility.Combine(scenery.gameObject);
         }
-        string Arrow(CardData c)
+        public static void SetLayer(GameObject go, int layer)
         {
-            if (c.dx == 0)
-                return c.dz < 0 ? "↑" : "↓";
-            if (c.dz == 0)
-                return c.dx < 0 ? "←" : "→";
-            return c.dx < 0 ? (c.dz < 0 ? "↖" : "↙") : (c.dz < 0 ? "↗" : "↘");
+            go.layer = layer;
+            foreach (Transform child in go.transform) SetLayer(child.gameObject, layer);
+        }
+        public Vector3 CardPosition(int id) { return cards[id].position + Vector3.up * 1.9f; }
+        public Vector2 CardDirection(CardData c)
+        {
+            var origin = CardPosition(c.id);
+            return (Vector2)(YardCamera.WorldToScreenPoint(origin + new Vector3(c.dx * 4.2f, 0, -c.dz * 2.35f)) - YardCamera.WorldToScreenPoint(origin));
         }
         public void Sync(PuzzleEngine rules)
         {
             for (int lane = 0; lane < engines.Count; lane++)
             {
                 engines[lane].SetActive(rules.HasLane(lane));
+                loadingTracks[lane].gameObject.SetActive(rules.Opened[lane] && rules.HasLane(lane));
                 engines[lane].transform.position = Rail.Point(lane, rules.Heads[lane]);
                 engines[lane].transform.rotation = Quaternion.LookRotation(Rail.Direction(lane, rules.Heads[lane]));
             }
@@ -200,8 +227,6 @@ namespace RenkEkspresi
             foreach (var c in rules.Cards)
             {
                 cards[c.Data.id].gameObject.SetActive(c.State == "parked");
-                captions[c.Data.id].text = (rules.Locked(c.Data.id) ? rules.Cards[c.Data.requires].Data.key + " ◇ " : !string.IsNullOrEmpty(c.Data.key) ? c.Data.key + " ◆ " : "") + Arrow(c.Data) + "  " + c.Remaining;
-                captions[c.Data.id].color = rules.Available(c.Data.id) ? Color.white : Hex("C4D2D2");
             }
             for (int i = 0; i < 5; i++)
             {
@@ -210,10 +235,11 @@ namespace RenkEkspresi
                 {
                     if (stationTokens[i])
                         Destroy(stationTokens[i]);
-                    stationTokens[i] = color < 0 ? null : TrainModels.Create(color, content);
+                    stationTokens[i] = color < 0 ? null : TrainModels.Create(color, yard);
                     stationColors[i] = color;
                     if (stationTokens[i])
                     {
+                        SetLayer(stationTokens[i], YardLayer);
                         stationTokens[i].transform.position = SlotPositions[i] + Vector3.up * .15f;
                         stationTokens[i].transform.rotation = Quaternion.Euler(0, 90, 0);
                         stationTokens[i].transform.localScale = Vector3.one * .8f;
@@ -227,15 +253,14 @@ namespace RenkEkspresi
             int slot = rules.Slots.FindIndex(s => s.Collector == id);
             if (slot < 0)
                 return;
-            var ghost = TrainModels.Create(rules.Cards[id].Data.color, content);
+            var ghost = TrainModels.Create(rules.Cards[id].Data.color, yard);
+            SetLayer(ghost, YardLayer);
             ghost.transform.localScale = Vector3.one * 1.1f;
             StartCoroutine(Fly(ghost, cardOrigins[id] + Vector3.up * .4f, SlotPositions[slot] + Vector3.up * .5f, .26f, false));
         }
         public void Match(MatchEvent match)
         {
-            var ghost = TrainModels.Create(match.Color, content);
-            ghost.transform.localScale = Vector3.one * .85f;
-            StartCoroutine(Fly(ghost, Rail.Point(match.Lane, match.Distance) + Vector3.up * .2f, SlotPositions[match.Slot] + Vector3.up * .5f, .24f, true));
+            StartCoroutine(Sparkle(SlotPositions[match.Slot] + Vector3.up * 1.2f));
         }
         IEnumerator Fly(GameObject go, Vector3 from, Vector3 to, float duration, bool shrink)
         {
@@ -259,7 +284,8 @@ namespace RenkEkspresi
         {
             var bits = new GameObject[5];
             for (int i = 0; i < bits.Length; i++)
-                bits[i] = Shape("Brass sparkle", PrimitiveType.Sphere, at, Vector3.one * .1f, Hex("F0D392"), content);
+                bits[i] = Shape("Brass sparkle", PrimitiveType.Sphere, at, Vector3.one * .1f, Hex("F0D392"), yard);
+            foreach (var bit in bits) SetLayer(bit, YardLayer);
             float t = 0;
             while (t < .32f)
             {
@@ -296,73 +322,113 @@ namespace RenkEkspresi
         }
         public int Pick(Vector2 screen)
         {
-            RaycastHit hit;
-            if (Physics.Raycast(Camera.ScreenPointToRay(screen), out hit, 200))
+            if (!YardCamera.pixelRect.Contains(screen)) return -1;
+            // Pick on one common plane, so tall colliders cannot steal a tap from the row behind.
+            var ray = YardCamera.ScreenPointToRay(screen);
+            var plane = new Plane(Vector3.up, Vector3.up * 2.02f);
+            float distance;
+            if (!plane.Raycast(ray, out distance)) return -1;
+            var point = ray.GetPoint(distance);
+            foreach (var entry in cards)
             {
-                var tag = hit.collider.GetComponent<CardTag>();
-                if (tag)
-                    return tag.Id;
+                if (!entry.Value.gameObject.activeSelf) continue;
+                var delta = point - entry.Value.position;
+                if (Mathf.Abs(delta.x) <= 2.02f && Mathf.Abs(delta.z) <= 1.16f) return entry.Key;
             }
             return -1;
         }
+        public void SetViewports(Rect routeRect, Rect yardRect)
+        {
+            Camera.rect = routeRect; YardCamera.rect = yardRect; Fit();
+        }
         public void Fit()
         {
-            if (level == null)
-                return;
-            var points = Rail.Routes.SelectMany(r => r.points).Concat(new[] { new Vector3(-8, 0, -5 - level.rows * 2.35f), new Vector3(8, 0, -5 - level.rows * 2.35f) }).ToArray();
-            Camera.transform.rotation = Quaternion.Euler(52, 0, 0);
-            Vector3 center = new Vector3(0, 0, (points.Max(p => p.z) + points.Min(p => p.z)) * .5f);
-            Camera.transform.position = center - Camera.transform.forward * 65;
-            float width = 0, height = 0;
-            foreach (var p in points)
-            {
-                var local = Camera.transform.InverseTransformPoint(p);
-                width = Mathf.Max(width, Mathf.Abs(local.x));
-                height = Mathf.Max(height, Mathf.Abs(local.y));
-            }
-            Camera.orthographicSize = Mathf.Max(height / .69f, width / Mathf.Max(.25f, Camera.aspect) / .94f);
-            Camera.backgroundColor = Hex(Grounds[level.theme]);
+            if (level == null) return;
+            var routePoints = Rail.Routes.SelectMany(r => r.points).ToList();
+            routePoints.AddRange(routePoints.Select(p => p + Vector3.up * 2.2f).ToArray());
+            Frame(Camera, routePoints.ToArray(), 58, 1.12f);
+            var board = new[] {new Vector3(-7.7f,0,1.7f), new Vector3(7.7f,2.5f,1.7f),
+                new Vector3(-7.7f,0,-5.5f-(level.rows-1)*2.35f),new Vector3(7.7f,2.2f,-5.5f-(level.rows-1)*2.35f)};
+            Frame(YardCamera, board, 67, 1.05f);
+            Camera.backgroundColor = Hex(Grounds[Mathf.Clamp(level.theme,0,Grounds.Length-1)]);
+        }
+        static void Frame(Camera camera, Vector3[] points, float angle, float padding)
+        {
+            camera.transform.rotation = Quaternion.Euler(angle,0,0);
+            var rotation = Quaternion.Inverse(camera.transform.rotation);
+            Vector3 min = Vector3.one * float.MaxValue, max = Vector3.one * float.MinValue;
+            foreach (var point in points) {var p = rotation * point; min=Vector3.Min(min,p);max=Vector3.Max(max,p);}
+            var center = camera.transform.rotation * ((min+max)*.5f);
+            camera.transform.position = center - camera.transform.forward * 65;
+            camera.orthographicSize = Mathf.Max((max.y-min.y)*.5f,(max.x-min.x)*.5f / Mathf.Max(.1f,camera.aspect))*padding;
         }
         void Tree(Vector3 p, bool snow)
         {
-            Shape("Trunk", PrimitiveType.Cylinder, p + Vector3.up * .7f, new Vector3(.18f, .7f, .18f), Hex("806E56"));
-            for (int i = 0; i < 3; i++)
-                Shape("Foliage", PrimitiveType.Sphere, p + Vector3.up * (1.4f + i * .45f), new Vector3(1.5f - i * .26f, 1.2f, 1.5f - i * .26f), snow ? Hex("9DB7AF") : Hex("548D74"));
+            Shape("Cedar trunk", PrimitiveType.Cylinder, p+Vector3.up*.6f,new Vector3(.14f,.6f,.14f),Hex("82694C"));
+            for(int i=0;i<3;i++)
+            {
+                var crown=Shape("Layered cedar",PrimitiveType.Capsule,p+Vector3.up*(1.25f+i*.36f),new Vector3(1.22f-i*.24f,.48f,1.22f-i*.24f),Hex(snow?"CADCD2":i==0?"3D7868":i==1?"4E9278":"72A88A"));
+            }
+            if(snow)Shape("Snow cap",PrimitiveType.Sphere,p+Vector3.up*2.1f,new Vector3(.65f,.3f,.65f),Hex("F8FAEF"));
+        }
+        void House(Vector3 p, bool coast)
+        {
+            Shape("Station cottage",PrimitiveType.Cube,p+Vector3.up*.58f,new Vector3(1.15f,1.16f,.95f),Hex(coast?"FAEDCF":"E5DBC8"));
+            for(int side=-1;side<=1;side+=2)
+            {
+                var roof=Shape("Pitched roof",PrimitiveType.Cube,p+new Vector3(side*.31f,1.26f,0),new Vector3(.78f,.12f,1.2f),Hex(coast?"C16C4D":"4C707B"));
+                roof.transform.localRotation=Quaternion.Euler(0,0,side*-28);
+                Shape("Glazed window",PrimitiveType.Cube,p+new Vector3(side*.31f,.73f,-.49f),new Vector3(.22f,.32f,.03f),Hex("8ECBD2"));
+            }
+            Shape("Door",PrimitiveType.Cube,p+new Vector3(0,.32f,-.49f),new Vector3(.23f,.61f,.035f),Hex("426A70"));
         }
         void Decorate()
         {
-            var rng = new System.Random(level.map_seed);
-            for (int side = -1; side <= 1; side += 2)
-                for (int i = 0; i < 9; i++)
-                {
-                    var p = new Vector3(side * (9.8f + (float)rng.NextDouble() * 2), 0, 23 - i * 3.7f);
-                    if (level.theme == 4)
-                    {
-                        for (int k = 0; k < 3; k++)
-                            Shape("Sandstone strata", PrimitiveType.Cylinder, p + Vector3.up * k * .55f, new Vector3(2 - k * .35f, .36f, 1.7f - k * .2f), Hex(k == 1 ? "B58161" : "C89774"));
-                    }
-                    else if (level.theme == 2)
-                    {
-                        for (int j = 0; j < 4; j++)
-                            Shape("Harvest bales", PrimitiveType.Cylinder, p + new Vector3((j % 2) * .7f, .4f, (j / 2) * .8f), new Vector3(.65f, .35f, .65f), Hex("D5B86B"));
-                    }
-                    else if (level.theme == 3)
-                    {
-                        Shape("Townhouse", PrimitiveType.Cube, p + Vector3.up * .8f, new Vector3(1.8f, 1.6f, 1.6f), Hex("D5C9B5"));
-                        Shape("Slate roof", PrimitiveType.Cube, p + Vector3.up * 1.7f, new Vector3(2, .3f, 1.8f), Hex("59747C"));
-                    }
-                    else
-                        Tree(p, level.theme == 5);
-                }
-            if (level.theme == 1)
+            var rng=new System.Random(level.map_seed);
+            var path=Rail.Routes.SelectMany(r=>r.points).ToArray();
+            float low=path.Min(p=>p.z),high=path.Max(p=>p.z);
+            if(level.theme==1)
             {
-                Shape("Sea", PrimitiveType.Cube, new Vector3(-28, -.18f, 7), new Vector3(32, .08f, 70), Hex("74B8C1"));
-                for (int i = 0; i < 5; i++)
-                    Shape("Foam line", PrimitiveType.Cube, new Vector3(-12.3f - i * .6f, -.10f, 7), new Vector3(.08f, .02f, 60), Hex("BFE2DF"));
+                Shape("Turquoise inlet",PrimitiveType.Sphere,new Vector3(-12,-.3f,(low+high)*.5f),new Vector3(9,.45f,high-low+10),Hex("70BABF"));
+                Shape("Shallow water",PrimitiveType.Sphere,new Vector3(-9.7f,-.18f,(low+high)*.5f),new Vector3(3,.16f,high-low+6),Hex("A1D8CE"));
+                for(int i=0;i<8;i++)Shape("Wave glint",PrimitiveType.Capsule,new Vector3(-9.7f-(float)rng.NextDouble(),-.08f,low+i*2),new Vector3(.06f,.04f,1.2f),Hex("DFF0E4"));
             }
-            if (level.theme == 5)
-                for (int i = 0; i < 6; i++)
-                    Shape("Snowdrift", PrimitiveType.Sphere, new Vector3(i % 2 == 0 ? -11 : 11, .1f, 18 - i * 4), new Vector3(3, .6f, 3), Hex("F1F4EF"));
+            if(level.theme==3)
+                for(int i=0;i<3;i++)House(new Vector3(9.1f,0,low+2+i*4),false);
+            for(int i=0;i<40;i++)
+            {
+                var p=new Vector3((float)rng.NextDouble()*21-10.5f,0,low-1+(float)rng.NextDouble()*(high-low+2));
+                // Decorations never stand on rails or hide a train.
+                if(path.Any(q=>(q-p).sqrMagnitude<3.2f))continue;
+                if(level.theme==1)
+                {
+                    if(p.x<-8)continue;
+                    if(i%4==0)House(p,true);
+                    else if(i%3==0)Shape("Coastal boulder",PrimitiveType.Sphere,p+Vector3.up*.23f,new Vector3(.75f,.48f,.58f),Hex("D6C8AE"));
+                    else Tree(p,false);
+                }
+                else if(level.theme==4)
+                {
+                    for(int j=0;j<3;j++)Shape("Weathered sandstone",PrimitiveType.Capsule,p+Vector3.up*(.35f+j*.36f),new Vector3(1.35f-j*.28f,.31f,1.1f-j*.2f),Hex(j==1?"BC8766":"D6A583"));
+                    if(i%3==0)Shape("Desert scrub",PrimitiveType.Sphere,p+new Vector3(.7f,.2f,0),new Vector3(.46f,.4f,.43f),Hex("8D9D78"));
+                }
+                else if(level.theme==2)
+                {
+                    if(i%3==0)House(p,false);
+                    else {Shape("Meadow",PrimitiveType.Sphere,p+Vector3.down*.09f,new Vector3(2.3f,.3f,1.5f),Hex("9CAC86"));Tree(p,false);}
+                }
+                else if(level.theme==3){if(i%2==0)House(p,false);else Tree(p,false);}
+                else Tree(p,level.theme==5);
+            }
+            for(int side=-1;side<=1;side+=2)
+            {
+                for(int i=0;i<5;i++)
+                {
+                    var p=new Vector3(side*9.5f,0,low+i*(high-low)/4);
+                    Shape("Boundary post",PrimitiveType.Cylinder,p+Vector3.up*.33f,new Vector3(.1f,.33f,.1f),Hex("F1E6CB"));
+                }
+                Shape("Timber boundary",PrimitiveType.Cube,new Vector3(side*9.5f,.46f,(low+high)*.5f),new Vector3(.07f,.09f,high-low),Hex("D8C69E"));
+            }
         }
         void BuildFriend(Vector3 p)
         {

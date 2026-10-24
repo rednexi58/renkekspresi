@@ -138,6 +138,7 @@ namespace RenkEkspresi
             else
             {
                 World.Nudge(id);
+                UI.Blocked(id, Rules.Blockers(id));
                 UI.Toast(error == "full" ? L("Yuvalar dolu. Bir toplayıcının bitmesini bekle.", "Slots are full. Let a collector finish.") : error == "locked" ? L("Önce anahtar vagonunu çıkar.", "Release the key collector first.") : L("Okun önünde başka bir vagon var.", "Another collector blocks this arrow."));
             }
         }
@@ -146,6 +147,7 @@ namespace RenkEkspresi
             foreach (var e in matches)
             {
                 World.Match(e);
+                UI.Match(e);
                 Audio.Play("match");
             }
         }
@@ -276,7 +278,7 @@ namespace RenkEkspresi
         void Tutorial(int step, Action done)
         {
             string[] titles = English ? new[] { "Follow the arrows", "Prepare your collectors", "Rescue the train" } : new[] { "Okları takip et", "Toplayıcıları hazırla", "Treni kurtar" };
-            string[] texts = English ? new[] { "Tap a collector whose arrow path is clear. It moves to the first free slot with one tap.", "Each collector takes its own color. The number shows how many wagons it can collect. Keep space for the colors coming next.", "Only wagons that physically reach the collection zone can be collected. Clear the train before it reaches the end. Recall starts with one use." } : new[] { "Okunun önü açık olan toplayıcıya dokun. Tek dokunuşla ilk boş yuvaya gider.", "Her toplayıcı kendi rengini alır. Üzerindeki sayı kalan kapasitesidir. Sıradaki renklere yer bırak.", "Sadece toplama noktasına gerçekten ulaşan vagonlar alınır. Tren sona varmadan hepsini topla. Geri al için başlangıçta bir hakkın var." };
+            string[] texts = English ? new[] { "Tap a collector whose arrow path is clear. It moves to the first free slot with one tap.", "Each collector takes its own color. The number shows how many wagons it can collect. Keep space for the colors coming next.", "Only wagons that reach the highlighted track can be collected. [A] is locked until you release the +A key collector. Recall starts with one use." } : new[] { "Okunun önü açık olan toplayıcıya dokun. Tek dokunuşla ilk boş yuvaya gider.", "Her toplayıcı kendi rengini alır. Üzerindeki sayı kalan kapasitesidir. Sıradaki renklere yer bırak.", "Sadece işaretli raya ulaşan vagonlar alınır. [A] kilidini açmak için önce +A anahtar vagonunu çıkar. Geri al için başlangıçta bir hakkın var." };
             var p = UI.Dialog(titles[step] + " · " + (step + 1) + "/3", texts[step]);
             UI.DialogButton(p, step == 2 ? L("Hazırım", "Let's go") : L("Devam →", "Next →"), 0, () => { if (step < 2) Tutorial(step + 1, done); else done(); }, true);
         }
