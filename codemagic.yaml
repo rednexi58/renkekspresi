@@ -20,7 +20,7 @@ workflows:
           import urllib.request
           from pathlib import Path
 
-          share_id = "0Tyzlt7RjbedTNr7D0YLHqv4CH1xo6W7PDsbow1O4nw"
+          share_id = "IT9PcnNicFObgX7zC_ja0qv4CH1xo6W7PDsbow1O4nw"
           api_url = f"https://build-automation.services.api.unity.com/v2/shares/{share_id}"
 
           with urllib.request.urlopen(api_url, timeout=30) as response:
