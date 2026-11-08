@@ -70,6 +70,23 @@ const BUSH := Color("7cc84f")
 const ROCK := Color("d8cbb8")
 
 
+## Locomotive liveries for the garage: body, cab and brass colours, coin price (0 = not
+## sold for coins: free or a purchase/starter reward) and translation key.
+const LOCOMOTIVE_SKINS := {
+	"classic": {"body": Color("2c3e78"), "cab": Color("e8473c"), "trim": Color("f5c542"), "price": 0, "key": "SKIN_CLASSIC"},
+	"crimson": {"body": Color("b3262e"), "cab": Color("2b2f3a"), "trim": Color("f5c542"), "price": 600, "key": "SKIN_CRIMSON"},
+	"forest": {"body": Color("1f6b45"), "cab": Color("f2e2c0"), "trim": Color("d9a441"), "price": 900, "key": "SKIN_FOREST"},
+	"royal": {"body": Color("5b2a86"), "cab": Color("f5c542"), "trim": Color("ffffff"), "price": 1400, "key": "SKIN_ROYAL"},
+	"sky": {"body": Color("2f9fe0"), "cab": Color("ffffff"), "trim": Color("ff8a2a"), "price": 2000, "key": "SKIN_SKY"},
+	"golden": {"body": Color("e0a91f"), "cab": Color("2b2f3a"), "trim": Color("fff1b0"), "price": 0, "key": "SKIN_GOLDEN"},
+}
+const SKIN_ORDER := ["classic", "crimson", "forest", "royal", "sky", "golden"]
+
+
+static func skin(id: String) -> Dictionary:
+	return LOCOMOTIVE_SKINS.get(id, LOCOMOTIVE_SKINS["classic"])
+
+
 static func scene_ground(theme_id: int) -> Color:
 	return SCENE_GROUNDS[clampi(theme_id, 0, SCENE_GROUNDS.size() - 1)]
 

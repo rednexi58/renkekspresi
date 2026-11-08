@@ -39,6 +39,7 @@ func _process(delta: float) -> bool:
 		# Exercises the real offer flows (debug commerce grants instantly).
 		_unlocked = true
 		_main._offer_vip()
+		_main.dialog.dismiss()
 		for i in _unlock:
 			_main._offer_reward_slot()
 	if _play and _main.session != null and _main.session.is_active():

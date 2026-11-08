@@ -45,6 +45,15 @@ func unlock_reward_slot() -> bool:
 	return true
 
 
+## Continue after a loss (paid with coins or a rewarded ad by the caller).
+func revive() -> bool:
+	if engine == null or not engine.revive():
+		return false
+	_finished = false
+	paused = false
+	return true
+
+
 func is_active() -> bool:
 	return engine != null and engine.is_playing() and not paused
 

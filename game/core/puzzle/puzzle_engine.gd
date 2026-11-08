@@ -60,6 +60,8 @@ var vip := false
 var reward_slots_granted := 0
 ## True once any booster was used; such wins are recorded separately from clean wins.
 var assisted := false
+## Times the player continued after losing (each continue counts as assisted).
+var revives := 0
 ## Uses left for [FREEZE, BLAST, RECALL].
 var booster_stock: PackedInt32Array = PackedInt32Array([0, 0, 1])
 
@@ -297,6 +299,28 @@ func use_booster(kind: int, events: Array[MatchEvent]) -> BoosterResult:
 	booster_stock[kind] -= 1
 	assisted = true
 	return BoosterResult.OK
+
+
+## Continue after a loss: pulls every lane back by `pushback_fraction` of the track and
+## freezes the train for `freeze_seconds`, then resumes play. Wagons move back with
+## their engine so the train stays intact.
+func revive(pushback_fraction: float = 0.35, freeze_seconds: float = 3.0) -> bool:
+	if status != Status.LOST:
+		return false
+	var span := end_distance - start_distance
+	for lane in heads.size():
+		var target := maxf(start_distance, heads[lane] - span * pushback_fraction)
+		var delta := heads[lane] - target
+		heads[lane] = target
+		for wagon in wagons:
+			if wagon.lane == lane:
+				wagon.distance -= delta
+	head_distance = active_head()
+	freeze_left = maxf(freeze_left, freeze_seconds)
+	revives += 1
+	assisted = true
+	status = Status.PLAYING
+	return true
 
 
 func _recall_last() -> void:

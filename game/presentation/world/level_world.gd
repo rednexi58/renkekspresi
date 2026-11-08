@@ -25,7 +25,7 @@ var _vip_offer := false
 var _ad_offer := false
 
 
-func build(level: LevelDefinition, routes: Array[RailRoute], engine: PuzzleEngine) -> void:
+func build(level: LevelDefinition, routes: Array[RailRoute], engine: PuzzleEngine, skin_id: String = "classic") -> void:
 	current_level = level
 	_layout = WorldLayout.new(level)
 	_add_environment()
@@ -46,7 +46,7 @@ func build(level: LevelDefinition, routes: Array[RailRoute], engine: PuzzleEngin
 	_train = TrainView.new()
 	_train.name = "Train"
 	_scene.add_child(_train)
-	_train.setup(_models, routes, engine)
+	_train.setup(_models, routes, engine, skin_id)
 	_shelf = ShelfView.new()
 	_shelf.name = "Shelf"
 	add_child(_shelf)

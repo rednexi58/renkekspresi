@@ -26,3 +26,67 @@ BTN_RESUME,Resume,Devam et
 BTN_RESTART,Restart,Yeniden başla
 PAUSE_TITLE,Paused,Duraklatıldı
 ALL_DONE,All 100 levels complete!,100 bölümün hepsi bitti!
+PLAY_LEVEL,Play · Level %d,Oyna · Bölüm %d
+MENU_LEVELS,Levels,Bölümler
+MENU_SHOP,Shop,Mağaza
+MENU_GARAGE,Garage,Garaj
+MENU_DAILY,Daily gift,Günlük hediye
+MENU_SETTINGS,Settings,Ayarlar
+BTN_HOME,Home,Ana menü
+BTN_OK,OK,Tamam
+BTN_CLOSE,Close,Kapat
+SETTINGS_MUSIC,Music,Müzik
+SETTINGS_SOUND,Sound effects,Ses efektleri
+SETTINGS_HAPTICS,Vibration,Titreşim
+SETTINGS_LANGUAGE,Language,Dil
+ON,On,Açık
+OFF,Off,Kapalı
+RESTORE,Restore purchases,Satın alımları geri yükle
+RESTORED,Purchases restored.,Satın alımlar geri yüklendi.
+RESTORE_FAILED,Could not reach the App Store. Try again later.,App Store'a ulaşılamadı. Daha sonra tekrar dene.
+PRIVACY,Privacy policy,Gizlilik politikası
+SUPPORT,Support,Destek
+VERSION_N,Version %s,Sürüm %s
+SHOP_TITLE,Shop,Mağaza
+SHOP_STARTER,Starter Pack,Başlangıç Paketi
+SHOP_STARTER_DESC,"1,500 coins + VIP slot + Golden Express locomotive","1.500 coin + VIP yuvası + Altın Ekspres lokomotif"
+SHOP_VIP,VIP Slot,VIP Yuvası
+SHOP_VIP_DESC,One extra station slot in every level forever,Her bölümde kalıcı 1 ekstra istasyon yuvası
+SHOP_NOADS,Remove Ads,Reklamları Kaldır
+SHOP_NOADS_DESC,"No ads between levels + 2,000 coins. Optional reward videos stay available.","Bölüm arası reklam yok + 2.000 coin. İsteğe bağlı ödüllü videolar kalır."
+SHOP_COINS_N,%s coins,%s coin
+SHOP_PIGGY,Piggy Bank,Kumbara
+SHOP_PIGGY_DESC,%d coins saved from your wins,Galibiyetlerinden biriken %d coin
+SHOP_PIGGY_LOCKED,Win more levels to fill it (%d needed),Doldurmak için kazanmaya devam et (%d gerekli)
+OWNED,Owned,Sahipsin
+BUY,Buy,Satın al
+PURCHASED,Thank you! +%d coins,Teşekkürler! +%d coin
+PURCHASED_PLAIN,Thank you for your purchase!,Satın alımın için teşekkürler!
+PURCHASE_FAILED,The purchase was not completed.,Satın alma tamamlanmadı.
+GARAGE_TITLE,Garage,Garaj
+SKIN_CLASSIC,Classic Blue,Klasik Mavi
+SKIN_CRIMSON,Crimson Flyer,Kızıl Yıldırım
+SKIN_FOREST,Forest Line,Orman Hattı
+SKIN_ROYAL,Royal Express,Kraliyet Ekspresi
+SKIN_SKY,Sky Runner,Gök Yolcusu
+SKIN_GOLDEN,Golden Express,Altın Ekspres
+SELECT,Select,Seç
+SELECTED,Selected,Seçili
+STARTER_ONLY,In the Starter Pack,Başlangıç Paketinde
+DAILY_TITLE,Daily gift,Günlük hediye
+DAY_N,Day %d,%d. gün
+CLAIM,Claim,Al
+COME_BACK,Come back tomorrow for the next gift!,Sonraki hediye için yarın gel!
+WIN_COINS,+%d coins,+%d coin
+BTN_DOUBLE,Watch ad · x2,Reklam izle · x2
+BTN_CONTINUE_COINS,Continue · %d coins,Devam et · %d coin
+BTN_CONTINUE_AD,Watch ad · continue,Reklam izle · devam et
+NOT_ENOUGH_COINS,Not enough coins.,Yeterli coin yok.
+BOOSTER_OUT_TITLE,%s used up,%s tükendi
+BOOSTER_OUT_BODY,Get one more use for this level.,Bu bölüm için 1 hak daha al.
+BTN_BUY_COINS,Buy · %d coins,Satın al · %d coin
+BTN_WATCH_AD,Watch ad · +1,Reklam izle · +1
+TUTORIAL_1,"Tap a wagon whose arrow path is clear. It goes to the station and collects wagons of its colour from the train.","Oku açık olan bir vagona dokun. İstasyona gider ve trendeki kendi rengindeki vagonları toplar."
+TUTORIAL_2,Collect every wagon before the train reaches the end of the track!,Tren rayın sonuna varmadan bütün vagonları topla!
+LEVELS_TITLE,Levels,Bölümler
+APP_TITLE,Color Express,Renk Ekspresi

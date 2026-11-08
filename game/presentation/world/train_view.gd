@@ -16,11 +16,11 @@ var _engines: Array[Node3D] = []
 var _wagons := {}
 
 
-func setup(models: ModelLibrary, routes: Array[RailRoute], engine: PuzzleEngine) -> void:
+func setup(models: ModelLibrary, routes: Array[RailRoute], engine: PuzzleEngine, skin_id: String = "classic") -> void:
 	_models = models
 	_routes = routes
 	for lane in routes.size():
-		var locomotive := models.make_locomotive()
+		var locomotive := models.make_locomotive(skin_id)
 		add_child(locomotive)
 		_engines.append(locomotive)
 	for wagon in engine.wagons:

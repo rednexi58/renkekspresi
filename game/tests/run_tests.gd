@@ -30,7 +30,12 @@ func _run_all() -> void:
 		return
 	var total := 0
 	for suite_name: String in SUITES:
-		var suite: RefCounted = load(SUITES[suite_name]).new()
+		var script := load(SUITES[suite_name]) as GDScript
+		if script == null or not script.can_instantiate():
+			printerr("FAIL [%s] suite script failed to compile" % suite_name)
+			quit(1)
+			return
+		var suite: RefCounted = script.new()
 		if "tree" in suite:
 			suite.tree = self
 		var report := TestReport.new()

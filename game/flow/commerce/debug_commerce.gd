@@ -1,33 +1,34 @@
 class_name DebugCommerce
 extends CommerceService
-## Development-only provider so the VIP slot and rewarded-slot flows can be played and
-## tested before the real StoreKit and ad SDK are integrated. Every grant is immediate
-## and in memory only. Main never selects it in a release export
-## (OS.is_debug_build() is false there), so it cannot fabricate purchases for players.
+## Development and internal-playtest provider: every purchase and rewarded ad is granted
+## immediately (prices are labelled TEST), so all flows can be played before StoreKit and
+## the ad SDK are integrated. Main selects it only in debug builds or builds exported
+## with the "playtest" feature; App Store builds never contain it as their provider.
 
-var _vip := false
-
-
-func has_vip() -> bool:
-	return _vip
+var _owned := {}
 
 
-func can_purchase_vip() -> bool:
-	return not _vip
+func owns(product_id: String) -> bool:
+	return _owned.has(product_id)
 
 
-func vip_price() -> String:
-	return "TEST"
+func can_purchase(product_id: String) -> bool:
+	return ProductCatalog.is_consumable(product_id) or not _owned.has(product_id)
 
 
-func purchase_vip(finished: Callable) -> void:
-	_vip = true
-	entitlements_changed.emit()
+func price(product_id: String) -> String:
+	return "TEST " + ProductCatalog.FALLBACK_PRICES.get(product_id, "")
+
+
+func purchase(product_id: String, finished: Callable) -> void:
+	if not ProductCatalog.is_consumable(product_id):
+		_owned[product_id] = true
+		entitlements_changed.emit()
 	finished.call(true)
 
 
 func restore_purchases(finished: Callable) -> void:
-	finished.call(_vip)
+	finished.call(true)
 
 
 func can_show_rewarded() -> bool:
@@ -36,3 +37,7 @@ func can_show_rewarded() -> bool:
 
 func show_rewarded(_placement: String, finished: Callable) -> void:
 	finished.call(true)
+
+
+func can_show_interstitial() -> bool:
+	return false

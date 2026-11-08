@@ -175,9 +175,26 @@ func make_wagon(color_id: int) -> MeshInstance3D:
 	return wagon
 
 
-func make_locomotive() -> MeshInstance3D:
-	var engine := _dress(WagonModels.locomotive(), Palette.ENGINE_BODY)
+## Locomotive in the given garage livery (see Palette.LOCOMOTIVE_SKINS).
+func make_locomotive(skin_id: String = "classic") -> MeshInstance3D:
+	var livery := Palette.skin(skin_id)
+	var mesh := WagonModels.locomotive()
+	var engine := MeshInstance3D.new()
+	engine.mesh = mesh
 	engine.name = "Locomotive"
+	for i in mesh.get_surface_count():
+		var role := mesh.surface_get_name(i)
+		var mat: Material
+		match role:
+			"engine":
+				mat = material(livery["body"], 0.4)
+			"cab":
+				mat = material(livery["cab"], 0.45)
+			"brass":
+				mat = material(livery["trim"], 0.3, 0.6)
+			_:
+				mat = _role_material(role, livery["body"])
+		engine.set_surface_override_material(i, mat)
 	return engine
 
 
