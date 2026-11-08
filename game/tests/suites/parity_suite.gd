@@ -4,6 +4,8 @@ extends RefCounted
 ## compares every snapshot: status, time, heads, wagon ids/distances, slots, capacities,
 ## and for edge cases booster stock, freeze, targets and ready times.
 
+## The campaign as recorded in v0.34; later campaign rebalancing must not break replay.
+const REFERENCE_CAMPAIGN := "res://tests/fixtures/campaign_v034.json"
 const FIXTURES := ["res://tests/fixtures/godot_reference.json", "res://tests/fixtures/godot_edge_reference.json"]
 const STATUS_NAMES := {
 	PuzzleEngine.Status.READY: "ready", PuzzleEngine.Status.PLAYING: "playing",
@@ -24,7 +26,8 @@ var snapshots := 0
 var cases := 0
 
 
-func run(campaign: Campaign, report: TestReport) -> void:
+func run(_campaign: Campaign, report: TestReport) -> void:
+	var campaign := Campaign.load_from(REFERENCE_CAMPAIGN)
 	for path: String in FIXTURES:
 		var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
 		for test: Dictionary in data["cases"]:
@@ -35,7 +38,7 @@ func run(campaign: Campaign, report: TestReport) -> void:
 
 func _replay(campaign: Campaign, test: Dictionary, report: TestReport) -> bool:
 	var level_id := int(test["level"])
-	var rules := PuzzleEngine.new(campaign.level_at(level_id - 1), false, SlotPolicy.legacy())
+	var rules := PuzzleEngine.new(campaign.level_at(level_id - 1), false, SlotPolicy.legacy(), RulesTuning.legacy())
 	rules.start()
 	var actions: Array = test["actions"]
 	var frames: Array = test["snapshots"]

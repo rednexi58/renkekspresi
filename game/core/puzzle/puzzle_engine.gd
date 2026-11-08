@@ -24,7 +24,6 @@ const SLOT_READY_DELAY := 0.26
 const SLOT_RETRY_DELAY := 0.045
 const BLAST_LIMIT := 5
 const RECOIL_SPEED := 14.0
-const WAGON_CATCH_UP := 5.45
 const OPEN_THRESHOLD := 0.75
 
 var level: LevelDefinition
@@ -39,6 +38,9 @@ var slot_kinds: Array[SlotKind] = []
 var order: PackedInt32Array = PackedInt32Array()
 var heads: PackedFloat64Array = PackedFloat64Array()
 var recoils: PackedFloat64Array = PackedFloat64Array()
+## Furthest head distance each lane has reached (recovery after a push-back runs up to it).
+var peaks: PackedFloat64Array = PackedFloat64Array()
+var tuning: RulesTuning
 var opened: Array[bool] = []
 
 var status: Status = Status.READY
@@ -66,22 +68,25 @@ var revives := 0
 var booster_stock: PackedInt32Array = PackedInt32Array([0, 0, 1])
 
 
-func _init(level_definition: LevelDefinition, has_vip: bool = false, slot_policy: SlotPolicy = null) -> void:
+func _init(level_definition: LevelDefinition, has_vip: bool = false, slot_policy: SlotPolicy = null, rules_tuning: RulesTuning = null) -> void:
 	level = level_definition
 	policy = slot_policy if slot_policy != null else SlotPolicy.standard()
+	tuning = rules_tuning if rules_tuning != null else RulesTuning.standard()
 	var lanes := maxi(1, level.train_count)
 	heads.resize(lanes)
 	recoils.resize(lanes)
+	peaks.resize(lanes)
 	opened.resize(lanes)
 	for lane in lanes:
 		heads[lane] = start_distance
 		recoils[lane] = 0.0
+		peaks[lane] = start_distance
 		opened[lane] = false
 	end_distance = level.track_length - 0.9
 	loading_start = start_distance + (end_distance - start_distance) * level.loading_fraction
 	loading_end = end_distance - 0.2
 	brake_distance = level.recoil_per_unit * 0.8
-	dispatch_delay = level.dispatch_seconds / 1.75
+	dispatch_delay = level.dispatch_seconds / 1.75 * tuning.dispatch_factor
 	yard = CollectorYard.new(level.parking)
 	var ranks := PackedInt32Array()
 	ranks.resize(lanes)
@@ -321,6 +326,7 @@ func revive(pushback_fraction: float = 0.35, freeze_seconds: float = 3.0) -> boo
 		var target := maxf(start_distance, heads[lane] - span * pushback_fraction)
 		var delta := heads[lane] - target
 		heads[lane] = target
+		peaks[lane] = target
 		for wagon in wagons:
 			if wagon.lane == lane:
 				wagon.distance -= delta
@@ -408,13 +414,17 @@ func _advance_heads(step: float, frozen: bool) -> void:
 			speed *= 1.15
 		if is_multi():
 			speed *= 0.88
-		heads[lane] += speed * step
+		var move := speed * step
+		if tuning.recovery_boost > 1.0 and heads[lane] < peaks[lane]:
+			move = minf(move * tuning.recovery_boost, peaks[lane] - heads[lane] + move)
+		heads[lane] += move
 		if recoils[lane] > 0:
 			var recoil := minf(recoils[lane], RECOIL_SPEED * step)
 			heads[lane] = maxf(start_distance, heads[lane] - recoil)
 			recoils[lane] -= recoil
 		if is_multi():
 			heads[lane] = maxf(start_distance, heads[lane])
+		peaks[lane] = maxf(peaks[lane], heads[lane])
 		if (heads[lane] - start_distance) / span >= OPEN_THRESHOLD:
 			opened[lane] = true
 
@@ -429,7 +439,7 @@ func _advance_wagons(step: float, frozen: bool, before: PackedFloat64Array) -> v
 		ranks[wagon.lane] += 1
 		var carried := wagon.distance + heads[wagon.lane] - before[wagon.lane]
 		var target := heads[wagon.lane] - FIRST_GAP - rank * GAP
-		wagon.distance = _move_toward(carried, target, step * WAGON_CATCH_UP)
+		wagon.distance = _move_toward(carried, target, step * tuning.catch_up)
 
 
 static func _move_toward(from: float, to: float, max_delta: float) -> float:
@@ -500,3 +510,5 @@ func _remove(wagon: WagonState, slot_index: int, events: Array[MatchEvent], blas
 	events.append(event)
 	wagons.erase(wagon)
 	recoils[wagon.lane] += brake_distance
+	# Only part of a push-back is won back quickly; the rest is permanent relief.
+	peaks[wagon.lane] = maxf(start_distance, peaks[wagon.lane] - brake_distance * (1.0 - tuning.recovery_share))

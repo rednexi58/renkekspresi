@@ -6,7 +6,10 @@ extends Node3D
 ## effects go through FxLayer. Owns no rules: everything shown is read from the
 ## PuzzleEngine passed to sync().
 
-const SCENE_SHARE := 0.42
+## Share of the play area the train map may take: it asks for what its shape needs to be
+## shown full width, within these limits so the board always stays playable.
+const SCENE_SHARE_MIN := 0.42
+const SCENE_SHARE_MAX := 0.6
 const BAND_OVERLAP := 6.0
 
 var camera: CameraRig
@@ -84,8 +87,10 @@ func _add_environment() -> void:
 
 ## Lays the scene and the board out inside `play_area` (viewport pixels).
 func frame(play_area: Rect2) -> void:
-	var scene_height := roundf(play_area.size.y * SCENE_SHARE)
-	_stage.place(Rect2(Vector2(0.0, 0.0), Vector2(get_viewport().get_visible_rect().size.x, play_area.position.y + scene_height)))
+	var screen_width := get_viewport().get_visible_rect().size.x
+	var wanted := _stage.preferred_height(screen_width)
+	var scene_height := roundf(clampf(wanted, play_area.size.y * SCENE_SHARE_MIN, play_area.size.y * SCENE_SHARE_MAX))
+	_stage.place(Rect2(Vector2.ZERO, Vector2(screen_width, play_area.position.y + scene_height)), play_area.position.y)
 	var board_target := Rect2(play_area.position + Vector2(0.0, scene_height), Vector2(play_area.size.x, play_area.size.y - scene_height))
 	var board := _layout.board_rect()
 	var shelf_top := _layout.shelf_centre_z() - WorldLayout.SHELF_DEPTH * 0.5 - 0.15

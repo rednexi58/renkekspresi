@@ -2,22 +2,21 @@ class_name SceneStage
 extends SubViewportContainer
 ## The train scene rendered in its own viewport in the upper part of the screen.
 ##
-## A separate viewport gives the scene its own camera (a close, following one) without
-## affecting the board, and clips the scene cleanly at its edge, so decoration can never
-## spill over the shelf. Positions needed by cross-screen effects are reported in screen
+## A separate viewport gives the scene its own camera (a fixed one showing the whole map)
+## without affecting the board, and clips the scene cleanly at its edge, so decoration can
+## never spill over the shelf. Positions needed by cross-screen effects are reported in screen
 ## coordinates.
 
 var _viewport: SubViewport
 var _world: Node3D
 var _scene: SceneView
 var _train: TrainView
-var _camera: FollowCamera
-var _routes: Array[RailRoute] = []
+var _camera: SceneCamera
+var _covered := 0.0
 var _engine: PuzzleEngine
 
 
 func setup(models: ModelLibrary, level: LevelDefinition, routes: Array[RailRoute], engine: PuzzleEngine, skin_id: String) -> void:
-	_routes = routes
 	_engine = engine
 	stretch = true
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -39,10 +38,23 @@ func setup(models: ModelLibrary, level: LevelDefinition, routes: Array[RailRoute
 	_train.name = "Train"
 	_scene.add_child(_train)
 	_train.setup(models, routes, engine, skin_id)
-	_camera = FollowCamera.new()
+	_camera = SceneCamera.new()
 	_world.add_child(_camera)
 	_camera.make_current()
-	_camera.set_bounds(_scene.bounds().grow(4.0))
+	_camera.set_bounds(_track_bounds(routes))
+
+
+## Ground area of every track, the part of the map the player must see.
+static func _track_bounds(routes: Array[RailRoute]) -> Rect2:
+	var bounds := routes[0].bounds()
+	for route in routes:
+		bounds = bounds.merge(route.bounds())
+	return bounds
+
+
+## Screen height the whole map needs at `width_px` (used to share the screen with the board).
+func preferred_height(width_px: float) -> float:
+	return _camera.preferred_height(width_px)
 
 
 func _add_environment(theme_id: int) -> void:
@@ -68,10 +80,13 @@ func _add_environment(theme_id: int) -> void:
 	_world.add_child(sun)
 
 
-## Places the stage on screen (viewport coordinates of the root canvas).
-func place(rect: Rect2) -> void:
+## Places the stage on screen (root canvas coordinates); its top `covered_px` rows are
+## under the HUD, so the map is fitted below them.
+func place(rect: Rect2, covered_px: float) -> void:
 	position = rect.position
 	size = rect.size
+	_covered = covered_px
+	_camera.fit(rect.size, covered_px)
 
 
 func sync(engine: PuzzleEngine) -> void:
@@ -82,26 +97,8 @@ func sync(engine: PuzzleEngine) -> void:
 
 
 func _process(delta: float) -> void:
-	if _engine == null or _camera == null:
-		return
-	_camera.follow(_action_points(), delta)
-	_scene.pulse_zones(delta)
-
-
-## Every running engine, plus each lane's loading zone start and final stop.
-func _action_points() -> PackedVector3Array:
-	var points := PackedVector3Array()
-	for lane in _routes.size():
-		if not _engine.has_lane(lane) and _engine.is_multi():
-			continue
-		var route := _routes[lane]
-		points.append(route.point_at(_engine.heads[lane]))
-		points.append(route.point_at(_engine.loading_start))
-		points.append(route.point_at(route.length))
-	if points.is_empty():
-		for route in _routes:
-			points.append(route.point_at(route.length))
-	return points
+	if _scene != null:
+		_scene.pulse_zones(delta)
 
 
 ## Screen position (root canvas coordinates) of a wagon about to be collected.

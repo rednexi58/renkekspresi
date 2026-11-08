@@ -9,6 +9,19 @@ func run(campaign: Campaign, report: TestReport) -> void:
 	_run_result(report)
 	_streak_and_combo(report)
 	_progress_fields(report)
+	_campaign_balance(campaign, report)
+
+
+## Multi-train levels are a treat every fifth level, and every level stays winnable by its
+## authored solution under the shipped rule tuning with only the always-open slots.
+func _campaign_balance(campaign: Campaign, report: TestReport) -> void:
+	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(Campaign.DEFAULT_PATH))
+	for i in campaign.count():
+		var level := campaign.level_at(i)
+		report.check(level.train_count == 1 or level.id % 5 == 0, "L%d: several trains only every fifth level" % level.id)
+		var result := SolutionPlayer.play(level, data["levels"][i]["design"]["solution"], RulesTuning.standard())
+		report.check(result.won, "L%d: authored solution wins with standard tuning" % level.id)
+		report.check(result.peak_danger < 0.99, "L%d: solution keeps a safety margin" % level.id)
 
 
 func _world_tour(campaign: Campaign, report: TestReport) -> void:

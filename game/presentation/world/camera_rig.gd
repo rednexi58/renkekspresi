@@ -5,7 +5,7 @@ extends Camera3D
 ## they are on the board.
 ##
 ## frame() fits the board and shelf into the lower screen area, adapting to every
-## aspect ratio and safe area. The train scene has its own camera (FollowCamera).
+## aspect ratio and safe area. The train scene has its own camera (SceneCamera).
 
 const PITCH_DEGREES := 60.0
 const DISTANCE := 60.0
