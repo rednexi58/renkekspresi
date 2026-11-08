@@ -6,10 +6,23 @@ extends SceneTree
 const SUITES := {
 	"rules": "res://tests/suites/rules_suite.gd",
 	"parity": "res://tests/suites/parity_suite.gd",
+	"presentation": "res://tests/suites/presentation_suite.gd",
 }
 
 
-func _initialize() -> void:
+var _started := false
+
+
+## Suites run on the first frame rather than in _initialize so that nodes added to the
+## root are fully inside the scene tree (cameras can project, tweens can run).
+func _process(_delta: float) -> bool:
+	if not _started:
+		_started = true
+		_run_all()
+	return false
+
+
+func _run_all() -> void:
 	var campaign := Campaign.load_from()
 	if campaign == null:
 		printerr("FAIL: campaign could not be loaded")
@@ -18,6 +31,8 @@ func _initialize() -> void:
 	var total := 0
 	for suite_name: String in SUITES:
 		var suite: RefCounted = load(SUITES[suite_name]).new()
+		if "tree" in suite:
+			suite.tree = self
 		var report := TestReport.new()
 		var started := Time.get_ticks_msec()
 		suite.run(campaign, report)

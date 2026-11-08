@@ -1,0 +1,28 @@
+keys,en,tr
+LEVEL_N,Level %d,Bölüm %d
+RESCUED,Rescued,Kurtarılan
+BOOSTER_FREEZE,Freeze,Dondur
+BOOSTER_BLAST,Blast,Patlat
+BOOSTER_RECALL,Undo,Geri al
+USES_N,%d left,%d hak
+USED_UP,Used up,Tükendi
+HINT_PLAY,Tap a collector whose arrow path is clear,Oku açık olan toplayıcıya dokun
+HINT_FROZEN,Train frozen · %s s,Tren durdu · %s sn
+HINT_FINAL,Final stretch! Match the colors,Son viraj! Renkleri yakala
+TOAST_FULL,All slots are full. Let a collector finish.,Yuvalar dolu. Bir toplayıcının bitmesini bekle.
+TOAST_LOCKED,Locked! Release its key collector first.,Kilitli! Önce anahtar toplayıcıyı çıkar.
+TOAST_BLOCKED,Something is in the way of this arrow.,Bu okun önünde başka bir toplayıcı var.
+TOAST_NO_TARGET,No matching wagon is in the loading zone yet.,Yükleme alanında eşleşen vagon yok.
+TOAST_EMPTY,There is no collector to undo.,Geri alınacak toplayıcı yok.
+TOAST_ACTIVE,Freeze is already active.,Dondurma zaten aktif.
+TOAST_USED_UP,This booster is used up for this level.,Bu yardımcı bu bölüm için tükendi.
+WIN_TITLE,Journey saved!,Yolculuk kurtarıldı!
+WIN_BODY,Time %s · %d moves,Süre %s · %d hamle
+LOSE_TITLE,Out of track!,Ray bitti!
+LOSE_BODY,The train reached the final stop. Plan for the colors coming next.,Tren son durağa ulaştı. Sıradaki renklere yer ayırarak dene.
+BTN_NEXT,Next level,Sonraki bölüm
+BTN_RETRY,Try again,Tekrar dene
+BTN_RESUME,Resume,Devam et
+BTN_RESTART,Restart,Yeniden başla
+PAUSE_TITLE,Paused,Duraklatıldı
+ALL_DONE,All 100 levels complete!,100 bölümün hepsi bitti!
