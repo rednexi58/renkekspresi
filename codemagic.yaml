@@ -1,6 +1,10 @@
+# Renk Ekspresi — Godot 4.5.1 iOS build, uploaded to TestFlight.
+# Requires in Codemagic: App Store Connect integration "Apple AppStore", the
+# renk_ekspresi_ios variable group (APPLE_TEAM_ID) and automatic iOS signing for
+# com.bedogames.renkekspresi.
 workflows:
-  renk-ekspresi-unity-testflight:
-    name: Renk Ekspresi - Unity TestFlight
+  renk-ekspresi-testflight:
+    name: Renk Ekspresi - TestFlight (Godot)
     max_build_duration: 60
     instance_type: mac_mini_m2
     integrations:
@@ -9,46 +13,49 @@ workflows:
       xcode: latest
       groups:
         - renk_ekspresi_ios
+      vars:
+        APP_STORE_APPLE_ID: "6825955053"
+        APP_VERSION: "1.1.0"
+        # Internal playtest builds: VIP/rewarded slots grant instantly for testing.
+        # Set to "0" for a build meant for App Store review.
+        PLAYTEST: "1"
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.bedogames.renkekspresi
     scripts:
-      - name: Download and verify Unity iOS IPA
+      - name: Install Godot 4.5.1 and the iOS export template
+        script: bash ci/install_godot_macos.sh
+      - name: Import project and run the test suites
         script: |
           set -euo pipefail
-          mkdir -p build/ios/ipa
-          python3 - <<'PY'
-          import json
-          import shutil
-          import urllib.request
-          from pathlib import Path
-
-          share_id = "IT9PcnNicFObgX7zC_ja0qv4CH1xo6W7PDsbow1O4nw"
-          api_url = f"https://build-automation.services.api.unity.com/v2/shares/{share_id}"
-
-          with urllib.request.urlopen(api_url, timeout=30) as response:
-              build = json.load(response)
-
-          if build.get("buildStatus") != "success":
-              raise SystemExit("Unity build is not successful")
-          if build.get("projectVersion", {}).get("bundleId") != "com.bedogames.renkekspresi":
-              raise SystemExit("Unity IPA has the wrong bundle ID")
-
-          artifact = build["links"]["download_primary"]
-          if artifact.get("meta", {}).get("type") != "IPA":
-              raise SystemExit("Unity primary artifact is not an IPA")
-
-          output = Path("build/ios/ipa/RenkEkspresiUnity.ipa")
-          with urllib.request.urlopen(artifact["href"], timeout=180) as source:
-              with output.open("wb") as destination:
-                  shutil.copyfileobj(source, destination)
-
-          if output.stat().st_size < 100_000:
-              raise SystemExit("Downloaded IPA is unexpectedly small")
-          print(f"Downloaded Unity build #{build['build']} ({output.stat().st_size} bytes)")
-          PY
-          python3 ci/verify_unity_ipa.py build/ios/ipa/RenkEkspresiUnity.ipa
+          GODOT=.ci-tools/Godot.app/Contents/MacOS/Godot
+          $GODOT --headless --path game --import || $GODOT --headless --path game --import
+          $GODOT --headless --path game --script res://tests/run_tests.gd
+      - name: Choose the next build number
+        script: |
+          set -euo pipefail
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" --platform IOS 2>/dev/null || echo 43)
+          if ! [[ "$LATEST" =~ ^[0-9]+$ ]]; then LATEST=43; fi
+          NEXT=$((LATEST + 1))
+          echo "BUILD_NUMBER_IOS=$NEXT" >> $CM_ENV
+          echo "Next build number: $NEXT"
+      - name: Prepare iOS export preset
+        script: python3 ci/prepare_ios_godot.py
+      - name: Export Xcode project
+        script: |
+          set -euo pipefail
+          mkdir -p build/ios
+          .ci-tools/Godot.app/Contents/MacOS/Godot --headless --path game --export-release iOS ../build/ios/RenkEkspresi.xcodeproj
+          test -d build/ios/RenkEkspresi.xcodeproj
+      - name: Apply provisioning profiles
+        script: xcode-project use-profiles
+      - name: Build signed IPA
+        script: xcode-project build-ipa --project build/ios/RenkEkspresi.xcodeproj --scheme RenkEkspresi
     artifacts:
       - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: false
+        submit_to_testflight: true
         submit_to_app_store: false

@@ -53,7 +53,9 @@ func _ready() -> void:
 ## can be played before StoreKit and the ad SDK are integrated; release exports never
 ## do, and until real providers exist they see no paid or rewarded entry points at all.
 func _create_commerce() -> CommerceService:
-	if OS.is_debug_build():
+	# "playtest" is a custom export feature set only for internal TestFlight builds
+	# (ci/prepare_ios_godot.py with PLAYTEST=1); App Store builds never carry it.
+	if OS.is_debug_build() or OS.has_feature("playtest"):
 		return DebugCommerce.new()
 	return UnavailableCommerce.new()
 
