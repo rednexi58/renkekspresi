@@ -1,8 +1,8 @@
 class_name ShelfView
 extends Node3D
-## The station shelf: eight positions in two rows. Positions 0-2 are always open,
+## The station shelf: eight positions in one row. Positions 0-2 are always open,
 ## position 3 is the VIP slot and positions 4-7 open one at a time with rewarded ads.
-## A collector waits in its slot lying across the shelf, with its remaining capacity
+## A collector waits upright in its slot, with its remaining capacity
 ## printed underneath. Locked positions show an unlock button (gold "VIP" or green
 ## "watch +1") only when the matching offer is genuinely available; otherwise they are
 ## hidden, so no dead button is ever drawn.
@@ -11,7 +11,8 @@ enum Look { HIDDEN, OPEN, VIP_OFFER, AD_OFFER }
 
 const FLIGHT_SECONDS := 0.34
 const BUMP_SECONDS := 0.16
-const PAD_SIZE := Vector3(1.95, 0.12, 1.12)
+const PAD_SIZE := Vector3(1.12, 0.12, 1.62)
+const OFFER_SIZE := Vector3(1.08, 0.16, 1.56)
 const PICK_HEIGHT := 0.45
 const AD_GREEN := Color("39c96b")
 const AD_GREEN_EDGE := Color("1f9a4c")
@@ -45,8 +46,8 @@ func setup(models: ModelLibrary, layout: WorldLayout) -> void:
 		_offers.append(_build_offer(i, at))
 		_looks.append(Look.HIDDEN)
 		_tokens.append(null)
-		var count := WorldLabels.painted_text("", 110, Palette.INK)
-		count.position = at + Vector3(0.0, 0.4, 0.78)
+		var count := WorldLabels.painted_text("", 100, Palette.INK)
+		count.position = at + Vector3(0.0, 0.4, 1.05)
 		add_child(count)
 		_counts.append(count)
 		_token_colors.append(-1)
@@ -59,21 +60,21 @@ func _build_offer(position_index: int, at: Vector3) -> Node3D:
 	offer.visible = false
 	add_child(offer)
 	if position_index == WorldLayout.VIP_POSITION:
-		_models.shape(offer, "rounded_box", Vector3(0.0, 0.0, 0.03), Vector3(1.85, 0.16, 1.0), Palette.GOLD_DARK, false)
-		_models.shape(offer, "rounded_box", Vector3(0.0, 0.05, 0.0), Vector3(1.8, 0.16, 0.94), Palette.GOLD, false)
-		var crown := WorldLabels.painted_text("VIP", 150, Palette.INK)
+		_models.shape(offer, "rounded_box", Vector3(0.0, 0.0, 0.04), OFFER_SIZE + Vector3(0.05, 0.0, 0.05), Palette.GOLD_DARK, false)
+		_models.shape(offer, "rounded_box", Vector3(0.0, 0.05, 0.0), OFFER_SIZE, Palette.GOLD, false)
+		var crown := WorldLabels.painted_text("VIP", 105, Palette.INK)
 		crown.position = Vector3(0.0, 0.14, 0.02)
 		offer.add_child(crown)
 	elif position_index >= WorldLayout.FIRST_REWARD_POSITION:
-		_models.shape(offer, "rounded_box", Vector3(0.0, 0.0, 0.03), Vector3(1.85, 0.16, 1.0), AD_GREEN_EDGE, false)
-		_models.shape(offer, "rounded_box", Vector3(0.0, 0.05, 0.0), Vector3(1.8, 0.16, 0.94), AD_GREEN, false)
+		_models.shape(offer, "rounded_box", Vector3(0.0, 0.0, 0.04), OFFER_SIZE + Vector3(0.05, 0.0, 0.05), AD_GREEN_EDGE, false)
+		_models.shape(offer, "rounded_box", Vector3(0.0, 0.05, 0.0), OFFER_SIZE, AD_GREEN, false)
 		var play := MeshInstance3D.new()
-		play.mesh = WorldLabels.play_mesh(0.36)
+		play.mesh = WorldLabels.play_mesh(0.42)
 		play.material_override = _models.flat_material(Palette.WHITE)
-		play.position = Vector3(-0.42, 0.14, 0.0)
+		play.position = Vector3(0.0, 0.14, -0.32)
 		offer.add_child(play)
-		var plus := WorldLabels.painted_text("+1", 140, Palette.WHITE)
-		plus.position = Vector3(0.3, 0.14, 0.02)
+		var plus := WorldLabels.painted_text("+1", 110, Palette.WHITE)
+		plus.position = Vector3(0.0, 0.14, 0.38)
 		offer.add_child(plus)
 	return offer
 
@@ -185,25 +186,16 @@ func _replace_token(position_index: int, color: int) -> void:
 	token.position = _layout.slot_position(position_index) + Vector3.UP * 0.4
 	add_child(token)
 	var wagon := _models.make_wagon(color)
-	wagon.basis = Basis.looking_at(Vector3.LEFT, Vector3.UP).scaled(Vector3.ONE * WorldLayout.TOKEN_SCALE)
+	wagon.scale = Vector3.ONE * WorldLayout.TOKEN_SCALE
 	token.add_child(wagon)
 	_tokens[position_index] = token
 
 
-## A parcel of the wagon's colour flies into the slot, which then bounces.
-func play_match(from: Vector3, slot_index: int, color: int) -> void:
+## Bounces the token of engine slot `slot_index` (a parcel just arrived).
+func bump(slot_index: int) -> void:
 	var position_index := _position_of(slot_index)
-	var parcel := _models.shape_with(get_parent(), "rounded_box", from, Vector3.ONE * 0.5, _models.painted(Palette.wagon(color)), false)
-	var target := to_global(_layout.slot_position(position_index) + Vector3.UP * 1.2)
-	var tween := create_tween()
-	tween.tween_method(func(t: float) -> void:
-		parcel.global_position = from.lerp(target, t) + Vector3.UP * sin(t * PI) * 2.0
-		parcel.rotation = Vector3(t * 3.0, t * 5.0, 0.0)
-		parcel.scale = Vector3.ONE * lerpf(0.55, 0.3, t), 0.0, 1.0, FLIGHT_SECONDS).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_callback(parcel.queue_free)
-	tween.tween_callback(func() -> void:
-		if _tokens[position_index] != null:
-			_bump(_tokens[position_index]))
+	if _tokens[position_index] != null:
+		_bump(_tokens[position_index])
 
 
 func _bump(node: Node3D) -> void:

@@ -48,13 +48,16 @@ func bounds() -> Rect2:
 	return result.grow(1.6)
 
 
-## Hides decoration whose footprint would reach below global Z `limit` (the top of the
-## shelf band), so trees and rocks never sit on the shelf after the scene is scaled.
-func clip_decoration(limit: float) -> void:
-	for item in _decor.get_children():
-		if item is Node3D:
-			var node := item as Node3D
-			node.visible = node.global_position.z + 0.9 * global_basis.get_scale().z < limit
+var _zone_pulse := 0.0
+
+
+## Breathing highlight on loading zones of lanes that are open.
+func pulse_zones(delta: float) -> void:
+	_zone_pulse += delta
+	var alpha := 0.35 + 0.25 * sin(_zone_pulse * 5.0)
+	for zone in _zones:
+		if zone.visible:
+			(zone.material_override as StandardMaterial3D).albedo_color.a = alpha
 
 
 func loading_zones() -> Array[MeshInstance3D]:
@@ -168,7 +171,7 @@ func _add_station_booth(route: RailRoute) -> void:
 ## so nothing overlaps and nothing touches the path.
 func _decorate(theme_id: int) -> void:
 	var inner := bounds()
-	var outer := inner.grow(7.0)
+	var outer := inner.grow(9.0)
 	for i in 26:
 		var patch := _free_point(outer, 1.0, 0.0)
 		if patch.y >= 0.0:

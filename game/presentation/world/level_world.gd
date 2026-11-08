@@ -1,26 +1,24 @@
 class_name LevelWorld
 extends Node3D
-## Composes one level's 3D view in three bands, top to bottom: the train scene, the
-## station shelf and the collector board, framed by one orthographic camera. Owns no
-## rules: everything shown is read from the PuzzleEngine passed to sync().
+## One level's view in two parts: the train scene in its own viewport at the top
+## (SceneStage, with a following camera) and, below it, the station shelf and the
+## collector board in this 3D world, framed by an orthographic camera. Cross-screen
+## effects go through FxLayer. Owns no rules: everything shown is read from the
+## PuzzleEngine passed to sync().
 
-const SCENE_SHARE := 0.36
-const BAND_GAP := 24.0
+const SCENE_SHARE := 0.42
+const BAND_OVERLAP := 6.0
 
 var camera: CameraRig
 var current_level: LevelDefinition
+var fx: FxLayer
 var _models := ModelLibrary.new()
 var _layout: WorldLayout
-var _scene: SceneView
-var _train: TrainView
+var _stage: SceneStage
 var _shelf: ShelfView
 var _board: BoardView
-var _zones: Array[MeshInstance3D] = []
-var _grass: MeshInstance3D
 var _floor: MeshInstance3D
 var _band: MeshInstance3D
-var _band_shadow: MeshInstance3D
-var _zone_pulse := 0.0
 var _vip_offer := false
 var _ad_offer := false
 
@@ -29,24 +27,10 @@ func build(level: LevelDefinition, routes: Array[RailRoute], engine: PuzzleEngin
 	current_level = level
 	_layout = WorldLayout.new(level)
 	_add_environment()
-	_grass = _models.shape_with(self, "box", Vector3(0.0, -0.55, 0.0), Vector3(400.0, 1.0, 400.0), _models.ground(Palette.scene_ground(level.theme)), false)
-	_grass.name = "Grass"
-	_floor = _models.shape_with(self, "box", Vector3.ZERO, Vector3.ONE, _models.ground(Palette.BOARD), false)
+	_floor = _models.shape_with(self, "box", Vector3(0.0, -0.1, 0.0), Vector3(400.0, 0.2, 400.0), _models.ground(Palette.BOARD), false)
 	_floor.name = "Board floor"
-	# A wooden band spanning the full width separates the scene from the board, as the
-	# shelf does in the reference games; the shelf plank sits on top of it.
 	_band = _models.shape_with(self, "box", Vector3.ZERO, Vector3.ONE, _models.ground(Palette.SHELF_BAND), false)
 	_band.name = "Shelf band"
-	_band_shadow = _models.contact_shadow(self, Vector3.ZERO, Vector2.ONE, 0.22)
-	_scene = SceneView.new()
-	_scene.name = "Scene"
-	add_child(_scene)
-	_scene.setup(_models, level, routes, engine)
-	_zones = _scene.loading_zones()
-	_train = TrainView.new()
-	_train.name = "Train"
-	_scene.add_child(_train)
-	_train.setup(_models, routes, engine, skin_id)
 	_shelf = ShelfView.new()
 	_shelf.name = "Shelf"
 	add_child(_shelf)
@@ -59,6 +43,18 @@ func build(level: LevelDefinition, routes: Array[RailRoute], engine: PuzzleEngin
 	camera.name = "Camera"
 	add_child(camera)
 	camera.make_current()
+	var stage_layer := CanvasLayer.new()
+	stage_layer.layer = 0
+	add_child(stage_layer)
+	_stage = SceneStage.new()
+	_stage.name = "Scene stage"
+	stage_layer.add_child(_stage)
+	_stage.setup(_models, level, routes, engine, skin_id)
+	var fx_layer := CanvasLayer.new()
+	fx_layer.layer = 2
+	add_child(fx_layer)
+	fx = FxLayer.new()
+	fx_layer.add_child(fx)
 	sync(engine)
 
 
@@ -67,9 +63,6 @@ func _add_environment() -> void:
 	environment.background_mode = Environment.BG_COLOR
 	environment.background_color = Palette.BOARD
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	# Calibrated so a lit upward face renders at almost exactly its palette colour
-	# (ambient + sun * cos(sun angle) ~= 1.0): colours stay true and saturated, while
-	# side faces fall into soft shade that gives the pieces volume.
 	environment.ambient_light_color = Color("fff8f0")
 	environment.ambient_light_energy = 0.4
 	environment.tonemap_mode = Environment.TONE_MAPPER_LINEAR
@@ -89,27 +82,19 @@ func _add_environment() -> void:
 	add_child(sun)
 
 
-## Lays the three bands out inside `play_area` (viewport pixels).
+## Lays the scene and the board out inside `play_area` (viewport pixels).
 func frame(play_area: Rect2) -> void:
-	var scene_height := play_area.size.y * SCENE_SHARE
-	var scene_target := Rect2(play_area.position, Vector2(play_area.size.x, scene_height - BAND_GAP))
+	var scene_height := roundf(play_area.size.y * SCENE_SHARE)
+	_stage.place(Rect2(Vector2(0.0, 0.0), Vector2(get_viewport().get_visible_rect().size.x, play_area.position.y + scene_height)))
 	var board_target := Rect2(play_area.position + Vector2(0.0, scene_height), Vector2(play_area.size.x, play_area.size.y - scene_height))
 	var board := _layout.board_rect()
-	var shelf_top := _layout.shelf_centre_z() - WorldLayout.SHELF_DEPTH * 0.5 - 0.2
-	var half_width := maxf(board.size.x, _layout.shelf_width()) * 0.5 + 0.3
-	var region := Rect2(Vector2(-half_width, shelf_top), Vector2(half_width * 2.0, board.end.y + 0.4 - shelf_top))
-	var scene_transform := camera.frame(region, 1.2, board_target, _scene.bounds(), 1.4, scene_target)
-	_scene.transform = scene_transform
-	# The cream board floor starts just above the shelf; grass shows above it.
-	var floor_top := shelf_top - 0.6
-	_floor.scale = Vector3(400.0, 0.2, 200.0)
-	_floor.position = Vector3(0.0, -0.1, floor_top + 100.0)
-	var band_depth := WorldLayout.SHELF_DEPTH + 1.3
-	_band.scale = Vector3(400.0, 0.2, band_depth)
-	_band.position = Vector3(0.0, -0.05, _layout.shelf_centre_z())
-	_band_shadow.scale = Vector3(400.0, 1.0, 1.6)
-	_band_shadow.position = Vector3(0.0, 0.06, _layout.shelf_centre_z() + band_depth * 0.5 + 0.3)
-	_scene.clip_decoration(_layout.shelf_centre_z() - band_depth * 0.5)
+	var shelf_top := _layout.shelf_centre_z() - WorldLayout.SHELF_DEPTH * 0.5 - 0.15
+	var half_width := maxf(board.size.x, _layout.shelf_width()) * 0.5 + 0.2
+	var region := Rect2(Vector2(-half_width, shelf_top), Vector2(half_width * 2.0, board.end.y + 0.3 - shelf_top))
+	camera.frame(region, 1.1, board_target)
+	var band_depth := WorldLayout.SHELF_DEPTH + 0.9
+	_band.scale = Vector3(400.0, 0.2, band_depth + BAND_OVERLAP)
+	_band.position = Vector3(0.0, -0.05, _layout.shelf_centre_z() - BAND_OVERLAP * 0.5 + 0.1)
 
 
 ## Which unlock offers the shelf may show (from CommerceService availability).
@@ -119,11 +104,10 @@ func set_offers(vip_offer: bool, ad_offer: bool) -> void:
 
 
 func sync(engine: PuzzleEngine) -> void:
-	_train.sync(engine)
+	_stage.sync(engine)
 	_shelf.sync(engine, _vip_offer, _ad_offer)
 	_board.refresh(engine)
-	for lane in _zones.size():
-		_zones[lane].visible = engine.opened[lane] and engine.has_lane(lane)
+	fx.set_danger(engine.danger() if engine.is_playing() else 0.0)
 
 
 func pick(screen_position: Vector2, engine: PuzzleEngine) -> int:
@@ -139,6 +123,10 @@ func collector_position(collector_id: int) -> Vector3:
 	return _board.piece_position(collector_id)
 
 
+func collector_screen_position(collector_id: int) -> Vector2:
+	return camera.unproject_position(_board.piece_position(collector_id) + Vector3.UP * WorldLayout.PICK_HEIGHT)
+
+
 func launch_collector(collector_id: int, slot_index: int, color_id: int) -> void:
 	_shelf.mark_arriving(slot_index)
 	_board.launch(collector_id, color_id, _shelf.slot_position(slot_index), _shelf.arrived.bind(slot_index))
@@ -149,9 +137,16 @@ func reject_collector(collector_id: int, blockers: PackedInt32Array) -> void:
 	_board.flash(blockers)
 
 
+## Wagon pops in the scene; a parcel of its colour flies to the collector's slot.
 func play_match(event: MatchEvent) -> void:
-	_shelf.play_match(_train.wagon_position(event.lane, event.distance), event.slot, event.color)
-	_train.remove_wagon(event.wagon)
+	var from := _stage.wagon_screen_position(event.lane, event.distance)
+	var to := camera.unproject_position(_shelf.slot_position(event.slot) + Vector3.UP * 0.5)
+	_stage.remove_wagon(event.wagon)
+	fx.fly_parcel(from, to, Palette.wagon(event.color), _shelf.bump.bind(event.slot))
+
+
+func scene_rect() -> Rect2:
+	return Rect2(_stage.position, _stage.size)
 
 
 func play_win() -> void:
@@ -186,11 +181,4 @@ func play_win() -> void:
 
 func play_loss() -> void:
 	camera.shake(0.45)
-
-
-func _process(delta: float) -> void:
-	_zone_pulse += delta
-	var alpha := 0.35 + 0.25 * sin(_zone_pulse * 5.0)
-	for zone in _zones:
-		if zone.visible:
-			(zone.material_override as StandardMaterial3D).albedo_color.a = alpha
+	_stage.shake(0.5)

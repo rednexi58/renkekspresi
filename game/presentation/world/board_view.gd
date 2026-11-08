@@ -146,7 +146,7 @@ func launch(collector_id: int, color_id: int, target: Vector3, arrived: Callable
 	var piece: Piece = _pieces[collector_id]
 	var start := to_global(piece.root.position)
 	var start_basis := piece.body.global_basis.orthonormalized()
-	var end_basis := Basis.looking_at(Vector3.LEFT, Vector3.UP)
+	var end_basis := Basis.IDENTITY
 	var ghost := _models.make_wagon(color_id)
 	get_parent().add_child(ghost)
 	var tween := create_tween()
