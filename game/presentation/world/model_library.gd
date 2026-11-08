@@ -4,17 +4,18 @@ extends RefCounted
 ##
 ## One instance is created per level world and passed to each builder (dependency
 ## injection instead of a global), so builders never construct materials themselves and
-## identical colours share one material, which keeps draw-call batching effective.
+## identical materials are shared, which keeps batching effective. Surface textures
+## (grass, gravel, wood, concrete) are generated from noise at runtime: no image assets
+## to license or ship, and every theme can recolour them.
 
-const WAGON_MESH := preload("res://assets/models/wagon.res")
-const LOCOMOTIVE_MESH := preload("res://assets/models/locomotive.res")
+const TEXTURE_SIZE := 512
 
 var _materials := {}
 var _primitive_meshes := {}
 
 
-## Lit, slightly glossy toy-plastic material, cached by colour and finish.
-func material(color: Color, roughness: float = 0.55, metallic: float = 0.0, emission: float = 0.0) -> StandardMaterial3D:
+## Lit painted material, cached by colour and finish.
+func material(color: Color, roughness: float = 0.6, metallic: float = 0.0, emission: float = 0.0) -> StandardMaterial3D:
 	var key := "%s|%.2f|%.2f|%.2f" % [color.to_html(), roughness, metallic, emission]
 	if _materials.has(key):
 		return _materials[key]
@@ -22,7 +23,7 @@ func material(color: Color, roughness: float = 0.55, metallic: float = 0.0, emis
 	made.albedo_color = color
 	made.roughness = roughness
 	made.metallic = metallic
-	made.metallic_specular = 0.45
+	made.metallic_specular = 0.5
 	if emission > 0.0:
 		made.emission_enabled = true
 		made.emission = color
@@ -31,8 +32,7 @@ func material(color: Color, roughness: float = 0.55, metallic: float = 0.0, emis
 	return made
 
 
-## Unshaded material for UI-like world markers (arrows, highlights) that must read
-## identically regardless of lighting.
+## Unshaded material for markers (arrows, highlights) that must read the same in any light.
 func flat_material(color: Color, transparent: bool = false) -> StandardMaterial3D:
 	var key := "flat|%s|%s" % [color.to_html(), transparent]
 	if _materials.has(key):
@@ -47,26 +47,81 @@ func flat_material(color: Color, transparent: bool = false) -> StandardMaterial3
 	return made
 
 
+## Noise-textured surface projected in world space (triplanar), so large and small
+## objects share a consistent texel density without UVs.
+## `colors` are the gradient stops from dark to light; `frequency` controls grain.
+func textured(name: String, colors: PackedColorArray, frequency: float, scale: float, roughness: float = 0.95, cellular: bool = false) -> StandardMaterial3D:
+	var key := "tex|%s|%s|%.3f|%.2f" % [name, colors, frequency, scale]
+	if _materials.has(key):
+		return _materials[key]
+	var noise := FastNoiseLite.new()
+	noise.seed = hash(name)
+	noise.frequency = frequency
+	noise.fractal_octaves = 4
+	if cellular:
+		noise.noise_type = FastNoiseLite.TYPE_CELLULAR
+		noise.cellular_return_type = FastNoiseLite.RETURN_DISTANCE2_SUB
+	else:
+		noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	var ramp := Gradient.new()
+	var offsets := PackedFloat32Array()
+	for i in colors.size():
+		offsets.append(float(i) / maxf(1.0, colors.size() - 1))
+	ramp.offsets = offsets
+	ramp.colors = colors
+	var texture := NoiseTexture2D.new()
+	texture.width = TEXTURE_SIZE
+	texture.height = TEXTURE_SIZE
+	texture.seamless = true
+	texture.noise = noise
+	texture.color_ramp = ramp
+	var made := StandardMaterial3D.new()
+	made.albedo_texture = texture
+	made.uv1_triplanar = true
+	made.uv1_world_triplanar = true
+	made.uv1_scale = Vector3.ONE * scale
+	made.roughness = roughness
+	made.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	_materials[key] = made
+	return made
+
+
+func grass(base: Color) -> StandardMaterial3D:
+	return textured("grass", PackedColorArray([base.darkened(0.22), base.darkened(0.06), base, base.lightened(0.12), base.lightened(0.05)]), 0.045, 0.09)
+
+
+func gravel(base: Color) -> StandardMaterial3D:
+	return textured("gravel", PackedColorArray([base.darkened(0.35), base.darkened(0.12), base, base.lightened(0.18)]), 0.32, 0.22, 0.95, true)
+
+
+func wood() -> StandardMaterial3D:
+	return textured("wood", PackedColorArray([Color("4d3426"), Color("6b4a35"), Color("7d5940")]), 0.12, 0.6, 0.9)
+
+
+func concrete(base: Color) -> StandardMaterial3D:
+	return textured("concrete", PackedColorArray([base.darkened(0.08), base, base.lightened(0.05), base.darkened(0.03)]), 0.08, 0.25, 0.85)
+
+
 func _role_material(role: String, paint: Color) -> Material:
 	match role:
 		"paint":
-			# A touch of self-illumination keeps the five puzzle colours vivid on the
-			# shaded side too; colour identity matters more than physical accuracy here.
-			return material(paint, 0.38, 0.0, 0.12)
-		"chassis":
-			return material(Palette.CHASSIS, 0.6)
+			return material(paint, 0.42)
+		"paint_shade":
+			return material(paint.darkened(0.14), 0.5)
+		"roof":
+			return material(paint.lightened(0.06), 0.5)
+		"frame":
+			return material(Palette.CHASSIS, 0.7, 0.2)
 		"steel":
-			return material(Palette.STEEL, 0.35, 0.35)
-		"brass":
-			return material(Palette.BRASS, 0.3, 0.4)
+			return material(Palette.STEEL, 0.35, 0.6)
+		"wheel":
+			return material(Palette.WHEEL, 0.45, 0.5)
 		"glass":
-			return material(Palette.GLASS, 0.15)
+			return material(Palette.GLASS, 0.08, 0.2)
 		"lamp":
-			return material(Palette.LAMP, 0.3, 0.0, 0.6)
-		"cream":
-			return material(Palette.TRAIN_CREAM, 0.5)
-		"accent":
-			return material(Palette.ENGINE_ACCENT, 0.4)
+			return material(Palette.LAMP, 0.3, 0.0, 1.4)
+		"stripe":
+			return material(Palette.ENGINE_STRIPE, 0.4)
 	return material(paint)
 
 
@@ -79,20 +134,50 @@ func _dress(mesh: ArrayMesh, paint: Color) -> MeshInstance3D:
 
 
 func make_wagon(color_id: int) -> MeshInstance3D:
-	var wagon := _dress(WAGON_MESH, Palette.wagon(color_id))
-	wagon.name = "Wagon"
+	var wagon := _dress(RollingStock.boxcar(), Palette.wagon(color_id))
+	wagon.name = "Boxcar"
 	return wagon
 
 
 func make_locomotive() -> MeshInstance3D:
-	var engine := _dress(LOCOMOTIVE_MESH, Palette.ENGINE_BODY)
+	var engine := _dress(RollingStock.locomotive(), Palette.ENGINE_BODY)
 	engine.name = "Locomotive"
-	# The source engine body is the dark "chassis" role; repaint it in the brand red so
-	# the locomotive reads as the hero piece, keeping wheels and frame dark via steel.
-	for i in LOCOMOTIVE_MESH.get_surface_count():
-		if LOCOMOTIVE_MESH.surface_get_name(i) == "chassis":
-			engine.set_surface_override_material(i, material(Palette.ENGINE_BODY, 0.38))
 	return engine
+
+
+## Soft round contact shadow laid on the ground. Directional shadows alone leave objects
+## looking pasted on; this darkening where they touch the ground grounds them.
+func contact_shadow(parent: Node3D, position: Vector3, size: Vector2, strength: float = 0.4) -> MeshInstance3D:
+	var key := "contact|%.2f" % strength
+	if not _materials.has(key):
+		var gradient := Gradient.new()
+		gradient.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
+		gradient.colors = PackedColorArray([Color(0, 0, 0, strength), Color(0, 0, 0, strength * 0.45), Color(0, 0, 0, 0)])
+		var texture := GradientTexture2D.new()
+		texture.gradient = gradient
+		texture.fill = GradientTexture2D.FILL_RADIAL
+		texture.fill_from = Vector2(0.5, 0.5)
+		texture.fill_to = Vector2(1.0, 0.5)
+		texture.width = 64
+		texture.height = 64
+		var made := StandardMaterial3D.new()
+		made.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		made.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		made.albedo_texture = texture
+		made.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+		_materials[key] = made
+	if not _primitive_meshes.has("ground_quad"):
+		var quad := PlaneMesh.new()
+		quad.size = Vector2.ONE
+		_primitive_meshes["ground_quad"] = quad
+	var shadow := MeshInstance3D.new()
+	shadow.mesh = _primitive_meshes["ground_quad"]
+	shadow.material_override = _materials[key]
+	shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	shadow.position = position
+	shadow.scale = Vector3(size.x, 1.0, size.y)
+	parent.add_child(shadow)
+	return shadow
 
 
 ## Shared primitive meshes (unit sized) so scenery instances reuse geometry.
@@ -103,12 +188,17 @@ func primitive(kind: String) -> Mesh:
 	match kind:
 		"box":
 			mesh = BoxMesh.new()
+		"rounded_box":
+			var tool := SurfaceTool.new()
+			tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+			MeshKit.rounded_box(tool, Vector3.ONE, 0.08, Transform3D.IDENTITY, 2)
+			mesh = tool.commit()
 		"sphere":
 			var sphere := SphereMesh.new()
 			sphere.radius = 0.5
 			sphere.height = 1.0
-			sphere.radial_segments = 16
-			sphere.rings = 8
+			sphere.radial_segments = 14
+			sphere.rings = 7
 			mesh = sphere
 		"low_sphere":
 			var rock := SphereMesh.new()
@@ -122,22 +212,17 @@ func primitive(kind: String) -> Mesh:
 			cylinder.top_radius = 0.5
 			cylinder.bottom_radius = 0.5
 			cylinder.height = 1.0
-			cylinder.radial_segments = 14
+			cylinder.radial_segments = 12
 			mesh = cylinder
 		"cone":
 			var cone := CylinderMesh.new()
 			cone.top_radius = 0.0
 			cone.bottom_radius = 0.5
 			cone.height = 1.0
-			cone.radial_segments = 12
+			cone.radial_segments = 9
 			mesh = cone
 		"prism":
 			mesh = PrismMesh.new()
-		"capsule":
-			var capsule := CapsuleMesh.new()
-			capsule.radius = 0.5
-			capsule.height = 1.0
-			mesh = capsule
 		_:
 			push_error("Unknown primitive: " + kind)
 			mesh = BoxMesh.new()
@@ -145,13 +230,18 @@ func primitive(kind: String) -> Mesh:
 	return mesh
 
 
-## A coloured primitive placed under `parent`. Shadows are cast unless disabled.
-func shape(parent: Node3D, kind: String, position: Vector3, size: Vector3, color: Color, cast_shadow: bool = true) -> MeshInstance3D:
+## A primitive placed under `parent` with a given material.
+func shape_with(parent: Node3D, kind: String, position: Vector3, size: Vector3, mat: Material, cast_shadow: bool = true) -> MeshInstance3D:
 	var instance := MeshInstance3D.new()
 	instance.mesh = primitive(kind)
-	instance.material_override = material(color)
+	instance.material_override = mat
 	instance.position = position
 	instance.scale = size
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if cast_shadow else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(instance)
 	return instance
+
+
+## A coloured primitive placed under `parent`.
+func shape(parent: Node3D, kind: String, position: Vector3, size: Vector3, color: Color, cast_shadow: bool = true) -> MeshInstance3D:
+	return shape_with(parent, kind, position, size, material(color), cast_shadow)

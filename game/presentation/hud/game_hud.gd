@@ -89,22 +89,32 @@ func _build_top() -> void:
 	_progress.position = Vector2(30, 170)
 	_progress.size = Vector2(1020, 80)
 	_top.add_child(_progress)
-	_hint = UiStyle.heading("", 34, Palette.WHITE, Palette.INK)
-	_hint.position = Vector2(0, 252)
-	_hint.size = Vector2(1080, 60)
+	var hint_pill := PanelContainer.new()
+	hint_pill.add_theme_stylebox_override("panel", UiStyle.glass_pill())
+	hint_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hint_pill.position = Vector2(140, 250)
+	hint_pill.size = Vector2(800, 64)
+	_top.add_child(hint_pill)
+	_hint = UiStyle.heading("", 30, Palette.WHITE, Color(0, 0, 0, 0))
 	_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_top.add_child(_hint)
+	hint_pill.add_child(_hint)
 
 
 func _build_bottom() -> void:
 	_bottom = Control.new()
 	_bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_bottom)
+	var tray := Panel.new()
+	tray.add_theme_stylebox_override("panel", UiStyle.card(Color(1, 1, 1, 0.92), Palette.PANEL_EDGE))
+	tray.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tray.position = Vector2(60, 14)
+	tray.size = Vector2(960, 236)
+	_bottom.add_child(tray)
 	for kind in 3:
 		var button := BoosterButton.new()
 		_bottom.add_child(button)
 		button.setup(ICONS[kind])
-		button.position = Vector2(120 + kind * 300, 20)
+		button.position = Vector2(135 + kind * 300, 20)
 		button.pressed.connect(func() -> void: booster_requested.emit(kind))
 		_boosters.append(button)
 

@@ -4,8 +4,10 @@ extends Node3D
 ## the rules: it mirrors PuzzleEngine state each frame and animates removals, but never
 ## decides which wagon leaves.
 
-const WAGON_SCALE := 0.82
-const ENGINE_SCALE := 0.9
+const WAGON_SCALE := 1.0
+const ENGINE_SCALE := 1.0
+## Height of the main-line rail tops, where the wheels stand.
+const RAIL_TOP := 0.24
 const POP_SECONDS := 0.22
 
 var _models: ModelLibrary
@@ -43,7 +45,7 @@ func sync(engine: PuzzleEngine) -> void:
 
 ## World position of a wagon on its rail (used by match effects before it disappears).
 func wagon_position(lane: int, distance: float) -> Vector3:
-	return _routes[lane].point_at(distance) + Vector3.UP * 0.6
+	return _routes[lane].point_at(distance) + Vector3.UP * 0.8
 
 
 ## Pops the collected wagon off the rail; the rules have already removed it.
@@ -61,4 +63,4 @@ func remove_wagon(wagon_id: int) -> void:
 func _place(node: Node3D, lane: int, distance: float, size: float) -> void:
 	var route := _routes[lane]
 	var forward := route.direction_at(distance)
-	node.transform = Transform3D(Basis.looking_at(forward, Vector3.UP).scaled(Vector3.ONE * size), route.point_at(distance) + Vector3.UP * 0.12)
+	node.transform = Transform3D(Basis.looking_at(forward, Vector3.UP).scaled(Vector3.ONE * size), route.point_at(distance) + Vector3.UP * RAIL_TOP)

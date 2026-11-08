@@ -4,7 +4,7 @@ extends Button
 ## drawn by child nodes so the theme's text styling does not apply; the Button itself
 ## only provides press handling and accessibility focus.
 
-const ICON_SIZE := 150.0
+const ICON_SIZE := 140.0
 
 var _icon: TextureRect
 var _name: Label
@@ -15,7 +15,7 @@ var _bubble: PanelContainer
 func setup(texture: Texture2D) -> void:
 	flat = true
 	focus_mode = Control.FOCUS_NONE
-	custom_minimum_size = Vector2(210, 220)
+	custom_minimum_size = Vector2(210, 210)
 	_icon = TextureRect.new()
 	_icon.texture = texture
 	_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -25,7 +25,7 @@ func setup(texture: Texture2D) -> void:
 	_icon.position = Vector2((custom_minimum_size.x - ICON_SIZE) * 0.5, 0.0)
 	_icon.size = Vector2(ICON_SIZE, ICON_SIZE)
 	add_child(_icon)
-	_name = UiStyle.heading("", 36)
+	_name = UiStyle.heading("", 32, Palette.INK, Color(0, 0, 0, 0))
 	_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_name.position = Vector2(0, ICON_SIZE + 4.0)
 	_name.size = Vector2(210, 52)

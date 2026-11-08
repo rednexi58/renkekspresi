@@ -1,21 +1,25 @@
 class_name YardView
 extends Node3D
-## The collector yard: one toy wagon per collector, turned to face its exit arrow, with
-## a bold arrow on top, its capacity number and any key/lock badge. Handles picking and
-## all yard feedback (blocked shake, blocker highlight, launch to the station).
+## The marshalling yard: one boxcar per collector, standing on its own short track that
+## runs along its exit arrow. The arrow is painted on the roof and the remaining
+## capacity is on a round roof plate, the way Wool Crush prints arrows on its pieces.
+## Handles picking and all yard feedback (blocked shake, blocker highlight, launch).
 
-const ARROW_HEIGHT := 1.98
-const BADGE_HEIGHT := 2.6
-const LAUNCH_SECONDS := 0.3
+const LAUNCH_SECONDS := 0.32
 const NUDGE_SECONDS := 0.28
 const FLASH_SECONDS := 0.7
+const ARROW_LENGTH := 0.86
+const ARROW_WIDTH := 0.52
+const ARROW_OFFSET := -0.26
+const PLATE_OFFSET := 0.5
 const LOCK_COLOR := Color("8c97b3")
+## Height of the yard rail tops, where the wheels stand.
+const WAGON_LIFT := 0.3
 
 var _models: ModelLibrary
 var _layout: WorldLayout
+var _tracks: TrackBuilder
 var _pieces := {}
-var _arrow_mesh: ArrayMesh
-var _outline_mesh: ArrayMesh
 
 
 class Piece:
@@ -27,50 +31,67 @@ class Piece:
 	var home: Vector3
 
 
-func setup(models: ModelLibrary, layout: WorldLayout, engine: PuzzleEngine) -> void:
+func setup(models: ModelLibrary, layout: WorldLayout, tracks: TrackBuilder, engine: PuzzleEngine) -> void:
 	_models = models
 	_layout = layout
-	_arrow_mesh = WorldLabels.arrow_mesh(1.5, 1.1)
-	_outline_mesh = WorldLabels.arrow_mesh(1.85, 1.45)
+	_tracks = tracks
+	var occupied := {}
 	for collector in engine.yard.collectors:
-		_pieces[collector.definition.id] = _build_piece(collector.definition)
+		var definition := collector.definition
+		var cell := layout.cell_position(definition.row, definition.col)
+		var facing := WorldLayout.arrow_direction(definition)
+		tracks.build_stub(self, cell + Vector3.UP * 0.16, facing, _track_length(facing))
+		_pieces[definition.id] = _build_piece(definition, cell, facing)
+		occupied[Vector2i(definition.row, definition.col)] = true
+	# Empty cells still get a yard track, so the board reads as a real marshalling yard.
+	for row in layout.rows:
+		for col in layout.cols:
+			if not occupied.has(Vector2i(row, col)):
+				tracks.build_stub(self, layout.cell_position(row, col) + Vector3.UP * 0.16, Vector3.FORWARD, _track_length(Vector3.FORWARD))
 	refresh(engine)
 
 
-func _build_piece(definition: CollectorDefinition) -> Piece:
+static func _track_length(facing: Vector3) -> float:
+	if absf(facing.x) > 0.01 and absf(facing.z) > 0.01:
+		return 3.3
+	return WorldLayout.CELL_Z - 0.25 if absf(facing.z) > absf(facing.x) else WorldLayout.CELL_X - 0.35
+
+
+func _build_piece(definition: CollectorDefinition, cell: Vector3, facing: Vector3) -> Piece:
 	var piece := Piece.new()
-	piece.home = _layout.cell_position(definition.row, definition.col)
+	piece.home = cell
 	piece.root = Node3D.new()
 	piece.root.name = "Collector %d" % definition.id
-	piece.root.position = piece.home
+	piece.root.position = cell
 	add_child(piece.root)
-	var tile := _models.shape(piece.root, "box", Vector3(0.0, 0.22, 0.0), Vector3(WorldLayout.CELL_X - 0.35, 0.06, WorldLayout.CELL_Z - 0.3), Palette.BOARD_CELL, false)
-	tile.name = "Tile"
-	var facing := WorldLayout.arrow_direction(definition)
+	var size := WorldLayout.COLLECTOR_SCALE
 	piece.body = Node3D.new()
 	piece.body.basis = Basis.looking_at(facing, Vector3.UP)
 	piece.root.add_child(piece.body)
 	var wagon := _models.make_wagon(definition.color)
-	wagon.scale = Vector3.ONE * WorldLayout.COLLECTOR_SCALE
-	wagon.position.y = 0.25
+	wagon.scale = Vector3.ONE * size
+	wagon.position.y = WAGON_LIFT
 	piece.body.add_child(wagon)
+	_models.contact_shadow(piece.body, Vector3(0.0, 0.24, 0.0), Vector2(RollingStock.WIDTH * size * 1.5, RollingStock.LENGTH * size * 1.15), 0.45)
+	var roof := WAGON_LIFT + RollingStock.roof_top() * size + 0.012
 	var outline := MeshInstance3D.new()
-	outline.mesh = _outline_mesh
+	outline.mesh = WorldLabels.arrow_mesh(ARROW_LENGTH * size + 0.12, ARROW_WIDTH * size + 0.14)
 	outline.material_override = _models.flat_material(Palette.INK)
-	outline.position = Vector3(0.0, ARROW_HEIGHT - 0.01, 0.0)
+	outline.position = Vector3(0.0, roof, ARROW_OFFSET * size)
 	outline.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	piece.body.add_child(outline)
 	piece.arrow = MeshInstance3D.new()
-	piece.arrow.mesh = _arrow_mesh
+	piece.arrow.mesh = WorldLabels.arrow_mesh(ARROW_LENGTH * size, ARROW_WIDTH * size)
 	piece.arrow.material_override = _models.flat_material(Palette.WHITE)
-	piece.arrow.position = Vector3(0.0, ARROW_HEIGHT, 0.0)
+	piece.arrow.position = Vector3(0.0, roof + 0.004, ARROW_OFFSET * size)
 	piece.arrow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	piece.body.add_child(piece.arrow)
-	piece.count = WorldLabels.label(str(definition.capacity), 96, Palette.WHITE)
-	piece.count.position = Vector3(1.35, BADGE_HEIGHT - 0.35, 0.75)
-	piece.root.add_child(piece.count)
-	piece.badge = WorldLabels.label("", 64, Palette.GOLD)
-	piece.badge.position = Vector3(-1.35, BADGE_HEIGHT - 0.35, 0.75)
+	# The plate sits on the rear half of the roof but is parented to the unrotated root
+	# so its number always reads upright.
+	var plate_at := facing * -PLATE_OFFSET * size + Vector3.UP * roof
+	piece.count = WorldLabels.capacity_plate(piece.root, _models, plate_at, str(definition.capacity))
+	piece.badge = WorldLabels.label("", 56, Palette.GOLD)
+	piece.badge.position = plate_at + Vector3(0.0, 0.7, 0.0)
 	piece.root.add_child(piece.badge)
 	return piece
 
@@ -94,8 +115,8 @@ func refresh(engine: PuzzleEngine) -> void:
 			piece.badge.text = ""
 
 
-## Collector under a screen position, or -1. Picks on one plane at roof height so a tall
-## piece can never steal a tap meant for the row behind it.
+## Collector under a screen position, or -1. Picks on one plane at roof height so a
+## tall piece can never steal a tap meant for the row behind it.
 func pick(camera: Camera3D, screen_position: Vector2, engine: PuzzleEngine) -> int:
 	var origin := camera.project_ray_origin(screen_position)
 	var direction := camera.project_ray_normal(screen_position)
@@ -123,7 +144,7 @@ func nudge(collector_id: int) -> void:
 	var piece: Piece = _pieces[collector_id]
 	var tween := create_tween()
 	for i in 4:
-		var offset := 0.18 if i % 2 == 0 else -0.18
+		var offset := 0.14 if i % 2 == 0 else -0.14
 		tween.tween_property(piece.root, "position", piece.home + Vector3(offset, 0.0, 0.0), NUDGE_SECONDS / 5.0)
 	tween.tween_property(piece.root, "position", piece.home, NUDGE_SECONDS / 5.0)
 
@@ -140,18 +161,21 @@ func flash(collector_ids: PackedInt32Array) -> void:
 		tween.tween_callback(func() -> void: piece.arrow.material_override = _models.flat_material(Palette.WHITE))
 
 
-## Flies a copy of the collector from its cell to a station berth along an arc, then
-## calls `arrived`. The real piece is hidden at once by refresh(); the copy is cosmetic.
+## Rolls a copy of the collector out of the yard and into its station siding along an
+## arc, then calls `arrived`. The real piece is hidden at once by refresh().
 func launch(collector_id: int, color_id: int, target: Vector3, arrived: Callable) -> void:
-	var start := piece_position(collector_id)
-	var ghost := _models.make_wagon(color_id)
-	ghost.scale = Vector3.ONE * WorldLayout.COLLECTOR_SCALE
+	var piece: Piece = _pieces[collector_id]
+	var start := piece.root.position + Vector3.UP * WAGON_LIFT
+	var start_basis := piece.body.basis
+	var end_basis := Basis.looking_at(Vector3.FORWARD, Vector3.UP)
+	var ghost := Node3D.new()
 	add_child(ghost)
-	ghost.position = start
+	var wagon := _models.make_wagon(color_id)
+	ghost.add_child(wagon)
 	var tween := create_tween()
 	tween.tween_method(func(t: float) -> void:
 		var eased := t * t * (3.0 - 2.0 * t)
-		ghost.position = start.lerp(target, eased) + Vector3.UP * sin(t * PI) * 2.4
-		ghost.rotation.y = lerpf(0.0, PI * 2.0, eased), 0.0, 1.0, LAUNCH_SECONDS)
+		var factor := lerpf(WorldLayout.COLLECTOR_SCALE, WorldLayout.TOKEN_SCALE, eased)
+		ghost.transform = Transform3D(start_basis.slerp(end_basis, eased).scaled(Vector3.ONE * factor), start.lerp(target, eased) + Vector3.UP * sin(t * PI) * 1.6), 0.0, 1.0, LAUNCH_SECONDS)
 	tween.tween_callback(ghost.queue_free)
 	tween.tween_callback(arrived)

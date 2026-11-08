@@ -8,8 +8,8 @@ extends Camera3D
 ## rectangle with a margin. Solving instead of hand-tuning per device is what keeps the
 ## yard fully tappable on every screen.
 
-const PITCH_DEGREES := 58.0
-const FIELD_OF_VIEW := 34.0
+const PITCH_DEGREES := 56.0
+const FIELD_OF_VIEW := 30.0
 const MARGIN := 0.02
 const ITERATIONS := 40
 

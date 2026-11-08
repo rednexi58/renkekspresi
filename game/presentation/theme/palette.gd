@@ -5,13 +5,15 @@ extends RefCounted
 ## deficiencies (each also differs clearly in lightness), and backgrounds stay calmer
 ## than the pieces the player must read.
 
-## Wagon/collector colours, indexed by the colour id used in campaign data.
+## Wagon/collector colours, indexed by the colour id used in campaign data. Rich
+## railway-livery tones rather than neon: they stay clearly distinct (each also differs
+## in lightness for colour-vision deficiencies) without looking like plastic toys.
 const WAGONS: Array[Color] = [
-	Color("ff4b55"), # 0 red
-	Color("2f8bff"), # 1 blue
-	Color("ffc31f"), # 2 yellow
-	Color("1fcf7a"), # 3 green
-	Color("a45bff"), # 4 purple
+	Color("d93a34"), # 0 red
+	Color("2c7be5"), # 1 blue
+	Color("f2b705"), # 2 yellow
+	Color("2fa35a"), # 3 green
+	Color("8a4fd1"), # 4 purple
 ]
 
 const INK := Color("1d2b4f")
@@ -34,32 +36,35 @@ const BUTTON_GREEN_EDGE := Color("159652")
 const PANEL := Color("ffffff")
 const PANEL_EDGE := Color("c8d6f0")
 
-## Puzzle board: the same calm blue on every theme so pieces always read the same way.
-const BOARD := Color("4a6fd1")
-const BOARD_EDGE := Color("3352a8")
-const BOARD_CELL := Color("eaf1ff")
-const PLATFORM := Color("ffe2a8")
-const PLATFORM_EDGE := Color("d9a75a")
-const BERTH_EMPTY := Color("ffffff")
 
 ## Train parts shared by every wagon and the locomotive.
-const CHASSIS := Color("2b3550")
-const STEEL := Color("aab8cc")
-const BRASS := Color("ffcf5c")
-const GLASS := Color("9fe9ff")
-const LAMP := Color("fff3b0")
-const TRAIN_CREAM := Color("fff4dc")
-const ENGINE_BODY := Color("ff5a4e")
-const ENGINE_ACCENT := Color("ffd23f")
+const CHASSIS := Color("2a2f38")
+const STEEL := Color("a7b0ba")
+const WHEEL := Color("3b4048")
+const GLASS := Color("23394a")
+const LAMP := Color("fff1b8")
+const ENGINE_BODY := Color("1f3f8f")
+const ENGINE_STRIPE := Color("f4c430")
 
-## Per-theme environment: ground, ground accent, track bed, sky/clear colour.
+## Railway infrastructure.
+const RAIL := Color("b9c2cc")
+const SLEEPER := Color("5c4030")
+const CURB := Color("b9b3a6")
+const PLATFORM := Color("b8b1a2")
+const PLATFORM_EDGE := Color("f2c230")
+const STATION_WALL := Color("e9dcc3")
+const STATION_ROOF := Color("8c3b2f")
+const STATION_TRIM := Color("4a3a30")
+const CANOPY := Color("56606b")
+
+## Per-theme environment: grass base, ballast/yard gravel, sky (clear) colour, foliage.
 const THEMES: Array[Dictionary] = [
-	{"ground": Color("62c454"), "accent": Color("52b046"), "bed": Color("8f7f6c"), "clear": Color("7fd6ff")},  # meadow
-	{"ground": Color("efd38e"), "accent": Color("e3c070"), "bed": Color("9c8670"), "clear": Color("6fd3ff")},  # coast
-	{"ground": Color("86c94e"), "accent": Color("74b740"), "bed": Color("8f7f6c"), "clear": Color("8edcff")},  # farmland
-	{"ground": Color("8dbf78"), "accent": Color("7aad66"), "bed": Color("857a70"), "clear": Color("9ad8ff")},  # old station
-	{"ground": Color("e8955a"), "accent": Color("d98047"), "bed": Color("9a7860"), "clear": Color("ffc89a")},  # canyon
-	{"ground": Color("d6e6f7"), "accent": Color("c2d6ee"), "bed": Color("7d8799"), "clear": Color("a9d8ff")},  # snow
+	{"ground": Color("6aa84f"), "gravel": Color("6e6a64"), "clear": Color("6aa84f"), "foliage": Color("3d7a3a")},  # meadow
+	{"ground": Color("d9c38f"), "gravel": Color("7a746b"), "clear": Color("d9c38f"), "foliage": Color("4c8a45")},  # coast
+	{"ground": Color("88b04b"), "gravel": Color("6e6a64"), "clear": Color("88b04b"), "foliage": Color("4a8238")},  # farmland
+	{"ground": Color("7f9f6a"), "gravel": Color("67645f"), "clear": Color("7f9f6a"), "foliage": Color("3f6e45")},  # old station
+	{"ground": Color("c98a55"), "gravel": Color("7d6a5a"), "clear": Color("c98a55"), "foliage": Color("6f7d45")},  # canyon
+	{"ground": Color("f6f9fc"), "gravel": Color("6c717a"), "clear": Color("f6f9fc"), "foliage": Color("2f5e4a")},  # snow
 ]
 
 

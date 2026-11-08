@@ -76,6 +76,19 @@ static func card(fill: Color = Palette.PANEL, border: Color = Palette.PANEL_EDGE
 	return box
 
 
+## Dark translucent pill for short status text drawn over the 3D scene.
+static func glass_pill() -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color(0.07, 0.11, 0.2, 0.55)
+	box.set_corner_radius_all(999)
+	box.content_margin_left = 28
+	box.content_margin_right = 28
+	box.content_margin_top = 8
+	box.content_margin_bottom = 10
+	box.anti_aliasing = true
+	return box
+
+
 static func pill(fill: Color, border: Color) -> StyleBoxFlat:
 	var box := card(fill, border)
 	box.set_corner_radius_all(999)

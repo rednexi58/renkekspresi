@@ -7,15 +7,15 @@ extends RefCounted
 ## the yard towards the camera at positive Z, so one continuous diorama is framed by a
 ## single camera with the interactive yard nearest (largest) on screen.
 
-const BERTH_SPACING := 2.75
-const BERTH_SIZE := Vector3(2.45, 0.22, 2.0)
-const STATION_Z := 0.4
-const YARD_TOP_Z := 4.0
-const CELL_X := 4.3
-const CELL_Z := 2.75
-const COLLECTOR_SCALE := 1.18
-## Height of the picking plane: roughly the roof of a parked collector.
-const PICK_HEIGHT := 1.6
+const BERTH_SPACING := 2.6
+const STATION_Z := 0.6
+const YARD_TOP_Z := 5.7
+const CELL_X := 3.7
+const CELL_Z := 3.3
+const COLLECTOR_SCALE := 1.72
+const TOKEN_SCALE := 1.38
+## Height of the picking plane: the roof of a parked collector.
+const PICK_HEIGHT := 2.14
 
 var rows: int
 var cols: int

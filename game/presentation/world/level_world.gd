@@ -22,6 +22,7 @@ func build(level: LevelDefinition, routes: Array[RailRoute], engine: PuzzleEngin
 	_layout = WorldLayout.new(level)
 	var colors := Palette.theme(level.theme)
 	_add_environment(colors["clear"])
+	var tracks := TrackBuilder.new(_models)
 	var scenery := Node3D.new()
 	scenery.name = "Scenery"
 	add_child(scenery)
@@ -29,15 +30,15 @@ func build(level: LevelDefinition, routes: Array[RailRoute], engine: PuzzleEngin
 	var track := Node3D.new()
 	track.name = "Track"
 	add_child(track)
-	_zones = TrackBuilder.new(_models).build(track, routes, engine, colors["bed"])
+	_zones = tracks.build(track, routes, engine, colors["gravel"])
 	_station = StationView.new()
 	_station.name = "Station"
 	add_child(_station)
-	_station.setup(_models, _layout)
+	_station.setup(_models, _layout, tracks)
 	_yard = YardView.new()
 	_yard.name = "Yard"
 	add_child(_yard)
-	_yard.setup(_models, _layout, engine)
+	_yard.setup(_models, _layout, tracks, engine)
 	_train = TrainView.new()
 	_train.name = "Train"
 	add_child(_train)
@@ -55,22 +56,31 @@ func _add_environment(clear_color: Color) -> void:
 	environment.background_mode = Environment.BG_COLOR
 	environment.background_color = clear_color
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color("cfe0ff")
-	environment.ambient_light_energy = 0.55
-	environment.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+	environment.ambient_light_color = Color("d4e2f2")
+	environment.ambient_light_energy = 0.4
+	# Filmic tone mapping rolls highlights off softly and deepens shadows, which is
+	# most of the difference between "rendered" and "plastic" looking colour.
+	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	environment.tonemap_exposure = 0.92
+	environment.tonemap_white = 6.0
+	environment.adjustment_enabled = true
+	environment.adjustment_saturation = 1.15
+	environment.adjustment_contrast = 1.05
 	var world_environment := WorldEnvironment.new()
 	world_environment.environment = environment
 	add_child(world_environment)
 	var sun := DirectionalLight3D.new()
 	sun.name = "Sun"
-	sun.light_color = Color("fff4e0")
-	sun.light_energy = 0.95
+	sun.light_color = Color("fff1dc")
+	sun.light_energy = 1.2
 	sun.shadow_enabled = true
-	sun.shadow_opacity = 0.7
-	sun.shadow_blur = 1.5
+	sun.shadow_opacity = 0.62
+	sun.shadow_blur = 2.0
+	sun.shadow_bias = 0.03
+	sun.shadow_normal_bias = 1.2
 	sun.directional_shadow_max_distance = 80.0
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
-	sun.rotation_degrees = Vector3(-58.0, -28.0, 0.0)
+	sun.rotation_degrees = Vector3(-52.0, -35.0, 0.0)
 	add_child(sun)
 
 
@@ -88,7 +98,7 @@ func _subject_points() -> PackedVector3Array:
 		points.append(Vector3(corner.x, 0.0, corner.y))
 		points.append(Vector3(corner.x, 2.4, corner.y))
 	for i in [0, StationView.BERTH_COUNT - 1]:
-		points.append(_layout.berth_position(i) + Vector3(0.0, 2.4, 0.0))
+		points.append(_layout.berth_position(i) + Vector3(0.0, 1.6, -1.3))
 	return points
 
 
