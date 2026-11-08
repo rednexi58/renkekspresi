@@ -142,18 +142,25 @@ namespace RenkEkspresi
             var names=Game.English?new[]{"Freeze","Blast","Recall"}:new[]{"Dondur","Patlat","Geri al"};
             for(int i=0;i<3;i++)
             {
-                boosterNames[i].text=names[i];boosterCounts[i].text=r.BoosterStock[i]>0?r.BoosterStock[i]+L(" kullanım"," use(s)"):Game.Commerce.RewardReady?L("Reklam · +1","Watch ad · +1"):L("Reklam yok","Ad unavailable");
+                boosterNames[i].text=names[i];boosterCounts[i].text=r.BoosterStock[i]>0?r.BoosterStock[i]+L(" kullanım"," use(s)"):Game.Commerce.AdsSupported?L("Reklam · +1","Watch ad · +1"):L("Tükendi","Used up");
                 boosters[i].interactable=r.Status=="playing"&&!Game.Paused;
             }
-            var locked=new List<string>();if(!r.Vip)locked.Add("VIP +1");if(!r.RewardSlot)locked.Add(L("Reklam +1","Ad +1"));
+            // Locked berths are offered only for providers that really exist; otherwise hidden.
+            var locked=new List<string>();
+            if(Game.OfferVipBerth)locked.Add("VIP +1");
+            if(Game.OfferAdBerth)locked.Add(L("Reklam +1","Ad +1"));
             for(int i=0;i<5;i++)
             {
                 bool open=i<r.Slots.Count;bool occupied=open&&r.Slots[i].Collector>=0;
-                stationLabels[i].text=open?(occupied?r.Cards[r.Slots[i].Collector].Remaining.ToString():L("BOŞ","FREE")):locked[i-r.Slots.Count];
-                stationActions[i].interactable=!open&&!Game.Paused&&r.Status=="playing";
-                stationActions[i].targetGraphic.raycastTarget=!open;
-                stationActions[i].targetGraphic.color=!open&&locked[i-r.Slots.Count].StartsWith("VIP")?Gold:Navy;
-                stationLabels[i].color=!open&&locked[i-r.Slots.Count].StartsWith("VIP")?Ink:Cream;
+                int lockedIndex=i-r.Slots.Count;bool offered=!open&&lockedIndex<locked.Count;
+                stationActions[i].gameObject.SetActive(open||offered);
+                if(!open&&!offered)continue;
+                bool vipOffer=offered&&locked[lockedIndex].StartsWith("VIP");
+                stationLabels[i].text=open?(occupied?r.Cards[r.Slots[i].Collector].Remaining.ToString():L("BOŞ","FREE")):locked[lockedIndex];
+                stationActions[i].interactable=offered&&!Game.Paused&&r.Status=="playing";
+                stationActions[i].targetGraphic.raycastTarget=offered;
+                stationActions[i].targetGraphic.color=vipOffer?Gold:Navy;
+                stationLabels[i].color=vipOffer?Ink:Cream;
                 var pos=Game.World.YardCamera.WorldToScreenPoint(Game.World.SlotPositions[i]+new Vector3(0,.15f,-1));
                 stationActions[i].GetComponent<RectTransform>().anchoredPosition=Local(pos);
                 var adjacent=Local(Game.World.YardCamera.WorldToScreenPoint(Game.World.SlotPositions[i]+new Vector3(2.65f,.15f,-1)));

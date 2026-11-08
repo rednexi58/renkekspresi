@@ -5,6 +5,16 @@ namespace RenkEkspresi
     // reward-completed events. Absent SDKs never fabricate a purchase or an ad.
     public interface ICommerce
     {
+        // Capability flags: UI shows store/ad entry points only when a real provider exists,
+        // so the shipped app never contains dead buttons (App Review guideline 2.1).
+        bool StoreSupported
+        {
+            get;
+        }
+        bool AdsSupported
+        {
+            get;
+        }
         bool Vip
         {
             get;
@@ -26,6 +36,20 @@ namespace RenkEkspresi
     }
     public sealed class UnavailableCommerce : ICommerce
     {
+        public bool StoreSupported
+        {
+            get
+            {
+                return false;
+            }
+        }
+        public bool AdsSupported
+        {
+            get
+            {
+                return false;
+            }
+        }
         public bool Vip
         {
             get

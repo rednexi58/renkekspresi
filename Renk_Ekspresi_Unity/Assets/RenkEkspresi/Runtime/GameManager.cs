@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.Networking;
 namespace RenkEkspresi
 {
     /// <summary>Owns transitions. Rules own matches; views cannot grant rewards or remove wagons.</summary>
@@ -40,6 +39,28 @@ namespace RenkEkspresi
         }
         SaveData save; Campaign campaign; RewardGuard rewardGuard = new RewardGuard();
         int levelIndex, generation, width, height; bool finishing, busy, background; float refreshAt;
+        /// <summary>A locked berth is offered only when its provider genuinely exists.</summary>
+        public bool OfferVipBerth
+        {
+            get
+            {
+                return Commerce.StoreSupported && Rules != null && !Rules.Vip;
+            }
+        }
+        public bool OfferAdBerth
+        {
+            get
+            {
+                return Commerce.AdsSupported && Rules != null && !Rules.RewardSlot;
+            }
+        }
+        int VisibleBerths
+        {
+            get
+            {
+                return Mathf.Min(5, Rules.Slots.Count + (OfferVipBerth ? 1 : 0) + (OfferAdBerth ? 1 : 0));
+            }
+        }
         public string L(string tr, string en)
         {
             return English ? en : tr;
@@ -50,6 +71,7 @@ namespace RenkEkspresi
             Screen.sleepTimeout = SleepTimeout.NeverSleep;
             save = new SaveData();
             save.Load();
+            ResolveLanguage();
             Commerce = new UnavailableCommerce();
             campaign = JsonUtility.FromJson<Campaign>(Resources.Load<TextAsset>("Data/campaign").text);
             World = new GameObject("Game world").AddComponent<GameWorld>();
@@ -61,6 +83,14 @@ namespace RenkEkspresi
             ApplyQuality();
             Load(save.Data.lastLevel);
             Home();
+        }
+        void ResolveLanguage()
+        {
+            string resolved = LanguagePolicy.Resolve(save.Data.language, Application.systemLanguage == SystemLanguage.Turkish);
+            if (resolved == save.Data.language)
+                return;
+            save.Data.language = resolved;
+            save.Commit();
         }
         // A native SDK bridge can attach after it has restored and verified entitlements.
         public void SetCommerce(ICommerce provider)
@@ -81,6 +111,7 @@ namespace RenkEkspresi
             Rules = new PuzzleEngine(campaign.levels[levelIndex], Commerce.Vip);
             World.Load(Rules.Level);
             World.Sync(Rules);
+            World.SetVisibleBerths(VisibleBerths);
             UI.Refresh();
         }
         void Update()
@@ -110,6 +141,7 @@ namespace RenkEkspresi
             if (Time.unscaledTime >= refreshAt)
             {
                 refreshAt = Time.unscaledTime + .05f;
+                World.SetVisibleBerths(VisibleBerths);
                 UI.Refresh();
             }
         }
@@ -185,11 +217,14 @@ namespace RenkEkspresi
                 return;
             Paused = true;
             var p = UI.Dialog("RENK EKSPRESİ", L("Renkleri bul. Yolu aç. Yolculuğu kurtar.\n\nBir sonraki durak seni bekliyor.", "Find the colors. Clear the way. Save the journey.\n\nYour next stop is waiting."));
-            UI.DialogButton(p, L("Devam et · Bölüm ", "Continue · Level ") + (save.Data.lastLevel + 1), 0, () => Begin(save.Data.lastLevel), true);
-            UI.DialogButton(p, L("Bölümleri keşfet", "Explore levels"), 1, () => Levels(save.Data.lastLevel / 12));
-            UI.DialogButton(p, "VIP", 2, Vip);
-            UI.DialogButton(p, L("Sıralama", "Leaderboard"), 3, Leaderboard);
-            UI.DialogButton(p, L("Ayarlar", "Settings"), 4, Settings);
+            int row = 0;
+            UI.DialogButton(p, L("Devam et · Bölüm ", "Continue · Level ") + (save.Data.lastLevel + 1), row++, () => Begin(save.Data.lastLevel), true);
+            UI.DialogButton(p, L("Bölümleri keşfet", "Explore levels"), row++, () => Levels(save.Data.lastLevel / 12));
+            // Store entry point exists only when a real purchase provider is attached.
+            if (Commerce.StoreSupported)
+                UI.DialogButton(p, "VIP", row++, Vip);
+            UI.DialogButton(p, L("Rekorlarım", "My records"), row++, Records);
+            UI.DialogButton(p, L("Ayarlar", "Settings"), row, Settings);
         }
         public void Menu()
         {
@@ -219,61 +254,31 @@ namespace RenkEkspresi
             if (busy)
                 return;
             Paused = true;
-            StartCoroutine(CheckConnection(() =>
-            {
-                int stamp = generation;
-                busy = true;
-                Action start = () =>
-                {
-                    if (stamp != generation)
-                        return;
-                    busy = false;
-                    Load(index);
-                    save.Data.lastLevel = levelIndex;
-                    save.Commit();
-                    Action play = () => { Rules.Status = "playing"; Paused = false; UI.Close(); Audio.StartSound(); };
-                    if (!save.Data.tutorial)
-                        Tutorial(0, () => { save.Data.tutorial = true; save.Commit(); play(); });
-                    else
-                        play();
-                };
-                if (!Commerce.Vip && save.Data.winsSinceAd >= 2)
-                {
-                    save.Data.winsSinceAd = 0;
-                    save.Commit();
-                    Commerce.Interstitial(start);
-                }
-                else
-                    start();
-            }));
-        }
-        IEnumerator CheckConnection(Action online)
-        {
-            busy = true;
-            UI.Dialog(L("Yola hazırlanıyoruz", "Preparing your journey"), L("Bağlantı kontrol ediliyor…", "Checking your connection…"));
+            // The puzzle is fully offline: no connectivity gate before play.
             int stamp = generation;
-            string endpoint = "https://www.gstatic.com/generate_204";
-#if UNITY_WEBGL && !UNITY_EDITOR
-  // Build Automation does not invoke ProjectTools.BuildWeb(), so online.txt is absent
-  // from its WebGL artifact. The HTML entry point is present in either build path.
-  endpoint=new Uri(new Uri(Application.absoluteURL),"index.html?t="+DateTime.UtcNow.Ticks).ToString();
-#endif
-            using (var request = UnityWebRequest.Get(endpoint))
+            busy = true;
+            Action start = () =>
             {
-                request.timeout = 8;
-                yield return request.SendWebRequest();
                 if (stamp != generation)
-                    yield break;
+                    return;
                 busy = false;
-                if (request.result == UnityWebRequest.Result.Success)
-                {
-                    online();
-                    yield break;
-                }
+                Load(index);
+                save.Data.lastLevel = levelIndex;
+                save.Commit();
+                Action play = () => { Rules.Status = "playing"; Paused = false; UI.Close(); Audio.StartSound(); };
+                if (!save.Data.tutorial)
+                    Tutorial(0, () => { save.Data.tutorial = true; save.Commit(); play(); });
+                else
+                    play();
+            };
+            if (Commerce.AdsSupported && !Commerce.Vip && save.Data.winsSinceAd >= 2)
+            {
+                save.Data.winsSinceAd = 0;
+                save.Commit();
+                Commerce.Interstitial(start);
             }
-            var p = UI.Dialog(L("Bağlantı bekleniyor", "Waiting for connection"), L("Oynamak için internet bağlantısı gerekiyor. Bağlantını kontrol edip tekrar dene.", "An internet connection is required to play. Check your connection and try again."));
-            UI.DialogButton(p, L("Tekrar dene", "Try again"), 0, () => StartCoroutine(CheckConnection(online)), true);
-            UI.DialogButton(p, L("Ana menü", "Home"), 1, Home);
+            else
+                start();
         }
         void Tutorial(int step, Action done)
         {
@@ -306,6 +311,11 @@ namespace RenkEkspresi
                 return;
             if (Rules.BoosterStock[kind] <= 0)
             {
+                if (!Commerce.AdsSupported)
+                {
+                    UI.Toast(L("Bu yardımcı bu bölümde tükendi.", "This booster is used up for this level."));
+                    return;
+                }
                 Reward(L("Bir yardımcı kazan", "Earn a booster"), () => Rules.GrantBooster(kind));
                 return;
             }
@@ -326,9 +336,9 @@ namespace RenkEkspresi
             if (Paused || busy || index < Rules.Slots.Count)
                 return;
             int lockedIndex = index - Rules.Slots.Count;
-            if (!Rules.Vip && lockedIndex == 0)
+            if (OfferVipBerth && lockedIndex == 0)
                 Vip();
-            else
+            else if (OfferAdBerth)
                 Reward(L("Bu bölüm için ek yuva", "Extra slot for this level"), () => Rules.GrantRewardSlot());
         }
         void Reward(string title, Func<bool> grant)
@@ -358,12 +368,17 @@ namespace RenkEkspresi
         {
             if (busy)
                 return;
+            if (!Commerce.StoreSupported)
+            {
+                Home();
+                return;
+            }
             Paused = true;
             var p = UI.Dialog("VIP · " + L("Bir ömür seninle", "Yours for a lifetime"), L("Kalıcı +1 toplayıcı yuvası\nBölüm sonu zorunlu reklamlar kalkar\nTek seferlik satın alma\n\nİsteğe bağlı ödüllü reklamlar devam eder.", "One permanent extra collector slot\nNo forced level-end ads\nOne-time purchase\n\nOptional rewarded ads remain available."));
             string price = Commerce.Price;
             string buy = Commerce.Vip ? L("VIP aktif", "VIP active") : Commerce.CanBuy && !string.IsNullOrEmpty(price) ? price : L("Mağaza bağlantısı bekleniyor", "Store connection pending");
             UI.DialogButton(p, buy, 0, () => { busy = true; int stamp = generation; Commerce.Buy(ok => { if (stamp != generation) return; busy = false; if (ok && Commerce.Vip) Rules.GrantVip(); Vip(); }); }, true).interactable = Commerce.CanBuy && !Commerce.Vip;
-            UI.DialogButton(p, L("Satın alımları geri yükle", "Restore purchases"), 1, () => { busy = true; Commerce.Restore(ok => { busy = false; if (ok && Commerce.Vip) Rules.GrantVip(); Vip(); }); }).interactable = Commerce.CanBuy;
+            UI.DialogButton(p, L("Satın alımları geri yükle", "Restore purchases"), 1, () => { busy = true; int stamp = generation; Commerce.Restore(ok => { if (stamp != generation) return; busy = false; if (ok && Commerce.Vip) Rules.GrantVip(); Vip(); }); }).interactable = Commerce.CanBuy;
             UI.DialogButton(p, L("Geri", "Back"), 2, () => { if (Rules.Status == "playing") Resume(); else Home(); });
         }
         public void Settings()
@@ -386,15 +401,23 @@ namespace RenkEkspresi
             QualitySettings.shadowResolution = ShadowResolution.Medium;
             QualitySettings.vSyncCount = 0;
         }
-        void Leaderboard()
+        // Real, device-local personal bests. Replaces the former sample leaderboard whose
+        // fictional names would be flagged as placeholder content in App Review.
+        void Records()
         {
-            var p = UI.Dialog(L("Yolculuğun izleri", "Journeys worth remembering"), L("Örnek sıralama · İsimler ve puanlar kurgusaldır.\nGerçek çevrimiçi yarış henüz bağlı değil.", "Sample leaderboard · Names and scores are fictional.\nLive online rankings are not connected yet."));
-            string[] names = { "LunaRail", "MaviRota", "CopperFox", "Sen / You" };
-            int[] scores = { 87, 82, 79, save.Data.unlocked };
-            for (int i = 0; i < 4; i++)
-                UI.Label(p, (i < 3 ? (i + 1) + ".  " : "→  ") + names[i] + "     " + L("Bölüm ", "Level ") + scores[i], 22, GameWorld.Hex(i == 3 ? "29675B" : "203D48"), new Vector2(0, 45 - i * 65), new Vector2(550, 52), i == 3);
-            int completed = save.Data.standard.Count(x => x > 0);
-            UI.Label(p, L("Bu cihazdaki yardımsız rekorların: ", "Your unassisted records on this device: ") + completed, 17, GameWorld.Hex("526A70"), new Vector2(0, -235), new Vector2(550, 54));
+            Paused = true;
+            int cleared = save.Data.standard.Count(x => x > 0);
+            int assisted = save.Data.assisted.Count(x => x > 0);
+            int bestIndex = -1;
+            for (int i = 0; i < save.Data.standard.Length; i++)
+                if (save.Data.standard[i] > 0 && (bestIndex < 0 || save.Data.standard[i] < save.Data.standard[bestIndex]))
+                    bestIndex = i;
+            var p = UI.Dialog(L("Rekorlarım", "My records"), L("Bu cihazdaki ilerlemen ve en iyi sürelerin.", "Your progress and best times on this device."));
+            UI.Label(p, L("Açılan bölüm: ", "Levels unlocked: ") + save.Data.unlocked + " / " + campaign.levels.Length, 24, GameWorld.Hex("203D48"), new Vector2(0, 45), new Vector2(550, 52), true);
+            UI.Label(p, L("Yardımsız tamamlanan: ", "Cleared unassisted: ") + cleared, 22, GameWorld.Hex("29675B"), new Vector2(0, -20), new Vector2(550, 52), true);
+            UI.Label(p, L("Yardımla tamamlanan: ", "Cleared with help: ") + assisted, 22, GameWorld.Hex("526A70"), new Vector2(0, -85), new Vector2(550, 52));
+            string fastest = bestIndex < 0 ? L("Henüz yardımsız rekor yok", "No unassisted record yet") : L("En hızlı: Bölüm ", "Fastest: Level ") + (bestIndex + 1) + "  ·  " + TimeLabel(save.Data.standard[bestIndex]);
+            UI.Label(p, fastest, 20, GameWorld.Hex("526A70"), new Vector2(0, -150), new Vector2(550, 52));
             UI.DialogButton(p, L("Ana menü", "Home"), 5, Home);
         }
         void OnApplicationPause(bool paused)
@@ -407,7 +430,7 @@ namespace RenkEkspresi
                     Paused = true;
             }
             else if (Rules != null && Rules.Status == "playing" && !busy)
-                StartCoroutine(CheckConnection(Menu));
+                Menu();
         }
         void OnApplicationFocus(bool focus)
         {

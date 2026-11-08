@@ -22,6 +22,10 @@ namespace RenkEkspresi
         readonly List<GameObject> engines = new List<GameObject>();
         readonly List<GameObject> stationTokens = new List<GameObject>();
         readonly List<int> stationColors = new List<int>();
+        readonly List<GameObject> berths = new List<GameObject>();
+        // The flying collector and the parked station token must not be visible at once.
+        readonly float[] tokenRevealAt = new float[5];
+        const float LaunchSeconds = .26f;
         readonly Dictionary<string, Material> materials = new Dictionary<string, Material>();
         Transform content, scenery, yard; Vector3[] cardOrigins; LevelData level;
         public static Color Hex(string value)
@@ -103,6 +107,8 @@ namespace RenkEkspresi
             loadingTracks.Clear();
             stationTokens.Clear();
             stationColors.Clear();
+            berths.Clear();
+            Array.Clear(tokenRevealAt, 0, tokenRevealAt.Length);
             Shape("Terrain", PrimitiveType.Cube, new Vector3(0, -.4f, 5), new Vector3(90, .7f, 90), Hex(Grounds[data.theme]));
             for (int lane = 0; lane < Rail.Routes.Length; lane++)
             {
@@ -155,7 +161,7 @@ namespace RenkEkspresi
             for (int i = 0; i < 5; i++)
             {
                 SlotPositions[i] = new Vector3((i - 2) * 2.65f, .3f, 0);
-                Shape("Brass station berth", PrimitiveType.Cube, SlotPositions[i], new Vector3(2.3f, .12f, 1.65f), Hex("7B9693"), yard);
+                berths.Add(Shape("Brass station berth", PrimitiveType.Cube, SlotPositions[i], new Vector3(2.3f, .12f, 1.65f), Hex("7B9693"), yard));
                 stationTokens.Add(null);
                 stationColors.Add(-1);
             }
@@ -189,6 +195,13 @@ namespace RenkEkspresi
             BuildFriend(Rail.Point(0, Rail.Routes[0].length) + new Vector3(1.8f, 0, 0));
             Fit();
             StaticBatchingUtility.Combine(scenery.gameObject);
+        }
+        /// <summary>Hides berths that can neither be used nor unlocked, so no dead station is drawn.</summary>
+        public void SetVisibleBerths(int count)
+        {
+            for (int i = 0; i < berths.Count; i++)
+                if (berths[i] && berths[i].activeSelf != (i < count))
+                    berths[i].SetActive(i < count);
         }
         public static void SetLayer(GameObject go, int layer)
         {
@@ -245,6 +258,12 @@ namespace RenkEkspresi
                         stationTokens[i].transform.localScale = Vector3.one * .8f;
                     }
                 }
+                if (stationTokens[i])
+                {
+                    bool arrived = Time.time >= tokenRevealAt[i];
+                    if (stationTokens[i].activeSelf != arrived)
+                        stationTokens[i].SetActive(arrived);
+                }
             }
         }
         // Short animations give feedback without changing rule time or match eligibility.
@@ -256,7 +275,8 @@ namespace RenkEkspresi
             var ghost = TrainModels.Create(rules.Cards[id].Data.color, yard);
             SetLayer(ghost, YardLayer);
             ghost.transform.localScale = Vector3.one * 1.1f;
-            StartCoroutine(Fly(ghost, cardOrigins[id] + Vector3.up * .4f, SlotPositions[slot] + Vector3.up * .5f, .26f, false));
+            tokenRevealAt[slot] = Time.time + LaunchSeconds;
+            StartCoroutine(Fly(ghost, cardOrigins[id] + Vector3.up * .4f, SlotPositions[slot] + Vector3.up * .5f, LaunchSeconds, false));
         }
         public void Match(MatchEvent match)
         {

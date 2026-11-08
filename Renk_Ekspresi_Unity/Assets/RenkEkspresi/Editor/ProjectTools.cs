@@ -20,7 +20,7 @@ namespace RenkEkspresi.Editor
         {
             PlayerSettings.companyName = "BedoGames";
             PlayerSettings.productName = "Renk Ekspresi";
-            PlayerSettings.bundleVersion = "0.40.0";
+            PlayerSettings.bundleVersion = "0.41.0";
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.iOS, "com.bedogames.renkekspresi");
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "com.bedogames.renkekspresi");
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
@@ -69,7 +69,6 @@ namespace RenkEkspresi.Editor
         {
             Configure();
             Build(BuildTarget.WebGL, "Builds/WebGL");
-            File.WriteAllText("Builds/WebGL/online.txt", "online");
         }
         [MenuItem("Renk Ekspresi/Build/iOS Xcode project")]
         public static void BuildIOS()
