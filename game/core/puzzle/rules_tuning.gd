@@ -4,16 +4,30 @@ extends RefCounted
 ## tuned without touching the engine, and the original v0.34 timing stays available to
 ## replay its recorded traces exactly (legacy).
 ##
-## Collecting a wagon pushes its train back (the reward); `recovery_boost` is how much
-## faster the train rolls forward again while it is behind its furthest point, so after a
-## burst of collections the next wagons reach the loading zone sooner instead of the
-## board going quiet. `catch_up` is how fast trailing wagons close the gap left by a
-## collected one; `recovery_share` is the part of each push-back that is won back quickly
-## (the rest keeps the train further from the end, so collecting still buys time); `dispatch_factor` scales the short delay before a collector takes a wagon.
+## Values were chosen with tools/balance_report.gd: every level must stay winnable by its
+## authored solution, the ideal run's peak danger should stay near the original (~0.7),
+## and a player who strays from the plan should rarely lose unfairly.
 
+## Collecting a wagon pushes its train back (the reward). While a train is behind its
+## furthest point it rolls forward this much faster, so after a burst of collections the
+## next wagons reach the loading zone sooner instead of the board going quiet.
 var recovery_boost := 2.2
+## Part of each push-back that is won back quickly; the rest is permanent, so collecting
+## still buys time.
 var recovery_share := 0.5
+## Latest point of the track (fraction of its length) where wagons become collectable; a
+## level's own earlier value wins. The original late zone let a matching wagon sit in
+## plain view behind a run of another colour while its collector stayed idle.
+var zone_start := 0.35
+## Collectors may take wagons before the train has rolled 75% of the way in (the original
+## intro gate left early collectors idle next to matching wagons).
+var collect_before_open := true
+## How fast trains roll in: the main pressure knob, raised to keep the tension the
+## earlier zone would otherwise remove.
+var approach_factor := 1.3
+## Speed at which trailing wagons close the gap left by a collected one.
 var catch_up := 7.5
+## Scales the short delay before a collector takes its target wagon.
 var dispatch_factor := 0.8
 
 
@@ -25,6 +39,9 @@ static func legacy() -> RulesTuning:
 	var tuning := RulesTuning.new()
 	tuning.recovery_boost = 1.0
 	tuning.recovery_share = 0.0
+	tuning.zone_start = 1.0
+	tuning.collect_before_open = false
+	tuning.approach_factor = 1.0
 	tuning.catch_up = 5.45
 	tuning.dispatch_factor = 1.0
 	return tuning

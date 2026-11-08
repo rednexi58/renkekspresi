@@ -93,7 +93,7 @@ func sync(engine: PuzzleEngine) -> void:
 	_train.sync(engine)
 	var zones := _scene.loading_zones()
 	for lane in zones.size():
-		zones[lane].visible = engine.opened[lane] and engine.has_lane(lane)
+		zones[lane].visible = (engine.opened[lane] or engine.tuning.collect_before_open) and engine.has_lane(lane)
 
 
 func _process(delta: float) -> void:

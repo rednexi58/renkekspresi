@@ -83,7 +83,7 @@ func _init(level_definition: LevelDefinition, has_vip: bool = false, slot_policy
 		peaks[lane] = start_distance
 		opened[lane] = false
 	end_distance = level.track_length - 0.9
-	loading_start = start_distance + (end_distance - start_distance) * level.loading_fraction
+	loading_start = start_distance + (end_distance - start_distance) * minf(level.loading_fraction, tuning.zone_start)
 	loading_end = end_distance - 0.2
 	brake_distance = level.recoil_per_unit * 0.8
 	dispatch_delay = level.dispatch_seconds / 1.75 * tuning.dispatch_factor
@@ -157,7 +157,7 @@ func occupied_slots() -> int:
 
 
 func can_collect(wagon: WagonState) -> bool:
-	return opened[wagon.lane] and wagon.distance >= loading_start - 0.00001 and wagon.distance <= loading_end
+	return (opened[wagon.lane] or tuning.collect_before_open) and wagon.distance >= loading_start - 0.00001 and wagon.distance <= loading_end
 
 
 func find_wagon(id: int) -> WagonState:
@@ -414,6 +414,7 @@ func _advance_heads(step: float, frozen: bool) -> void:
 			speed *= 1.15
 		if is_multi():
 			speed *= 0.88
+		speed *= tuning.approach_factor
 		var move := speed * step
 		if tuning.recovery_boost > 1.0 and heads[lane] < peaks[lane]:
 			move = minf(move * tuning.recovery_boost, peaks[lane] - heads[lane] + move)
@@ -449,7 +450,7 @@ static func _move_toward(from: float, to: float, max_delta: float) -> float:
 ## Each ready slot picks the first collectible wagon of its colour, unless an older slot
 ## of the same colour is still waiting (first sent, first served).
 func _assign_targets() -> void:
-	if not opened.has(true):
+	if not opened.has(true) and not tuning.collect_before_open:
 		return
 	for slot in slots:
 		if not slot.is_occupied() or slot.target >= 0 or elapsed + EPSILON < slot.ready_at:
