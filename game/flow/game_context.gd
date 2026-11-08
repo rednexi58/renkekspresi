@@ -13,6 +13,7 @@ var campaign: Campaign
 var progress: PlayerProgress
 var commerce: CommerceService
 var audio: AudioService
+var leaderboards: LeaderboardService
 
 
 func save() -> void:
@@ -41,6 +42,10 @@ func buy(product_id: String, finished: Callable) -> void:
 		var coins := PurchaseFulfillment.fulfil(product_id, progress)
 		save()
 		finished.call(coins))
+
+
+func language() -> String:
+	return TranslationServer.get_locale().substr(0, 2)
 
 
 func has_vip() -> bool:

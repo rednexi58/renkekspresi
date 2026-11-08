@@ -12,6 +12,7 @@ const HERO := preload("res://assets/branding/app_icon_1024.png")
 var _coins: Label
 var _play: Button
 var _daily_dot: Panel
+var _status: Label
 
 
 func _ready() -> void:
@@ -54,20 +55,23 @@ func _ready() -> void:
 	UiStyle.tint_button(_play, Palette.BUTTON_GREEN, Palette.BUTTON_GREEN_EDGE)
 	_play.pressed.connect(func() -> void: play_pressed.emit())
 	play_box.add_child(_play)
+	_status = UiStyle.heading("", 38, Palette.WHITE, Palette.INK)
+	column.add_child(_status)
 	var grid_box := CenterContainer.new()
 	column.add_child(grid_box)
 	var grid := GridContainer.new()
-	grid.columns = 2
+	grid.columns = 3
 	grid.add_theme_constant_override("h_separation", 24)
 	grid.add_theme_constant_override("v_separation", 24)
 	grid_box.add_child(grid)
 	for entry in [["levels", "MENU_LEVELS", Palette.BUTTON_BLUE], ["shop", "MENU_SHOP", Palette.BUTTON_PRIMARY],
-			["garage", "MENU_GARAGE", Color("9b4dff")], ["daily", "MENU_DAILY", Color("ff6f91")]]:
+			["garage", "MENU_GARAGE", Color("9b4dff")], ["daily", "MENU_DAILY", Color("ff6f91")],
+			["records", "MENU_RECORDS", Color("16b8a6")], ["settings", "MENU_SETTINGS", Palette.INK_SOFT]]:
 		var button := Button.new()
 		button.text = tr(entry[1])
-		button.custom_minimum_size = Vector2(348, 130)
+		button.custom_minimum_size = Vector2(310, 124)
 		button.focus_mode = Control.FOCUS_NONE
-		button.add_theme_font_size_override("font_size", 42)
+		button.add_theme_font_size_override("font_size", 38)
 		UiStyle.tint_button(button, entry[2], (entry[2] as Color).darkened(0.3))
 		var menu: String = entry[0]
 		button.pressed.connect(func() -> void: menu_pressed.emit(menu))
@@ -76,7 +80,7 @@ func _ready() -> void:
 			_daily_dot = Panel.new()
 			_daily_dot.add_theme_stylebox_override("panel", UiStyle.pill(Palette.DANGER, Palette.DANGER.darkened(0.3)))
 			_daily_dot.size = Vector2(44, 44)
-			_daily_dot.position = Vector2(318, -14)
+			_daily_dot.position = Vector2(280, -14)
 			_daily_dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			button.add_child(_daily_dot)
 	var top := HBoxContainer.new()
@@ -108,4 +112,6 @@ func _ready() -> void:
 func refresh(progress: PlayerProgress, daily_available: bool) -> void:
 	_coins.text = "● %d" % progress.coins
 	_play.text = tr("PLAY_LEVEL") % (progress.current_level + 1)
+	var city := WorldTour.city(progress.current_level, TranslationServer.get_locale().substr(0, 2))
+	_status.text = tr("HOME_STATUS") % [city, progress.win_streak, progress.chest_stars, StarChest.STARS_TO_OPEN]
 	_daily_dot.visible = daily_available

@@ -8,6 +8,8 @@ var lane: int
 var collector: int
 var slot: int
 var distance: float
+## True when this wagon filled the collector (it leaves its slot).
+var completes := false
 
 
 func _init(wagon_state: WagonState, collector_id: int, slot_index: int) -> void:

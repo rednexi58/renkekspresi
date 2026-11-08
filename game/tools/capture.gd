@@ -15,6 +15,7 @@ var _clock := 0.0
 var _shot := 0
 var _unlock := 0
 var _unlocked := false
+var _menu := ""
 
 
 func _initialize() -> void:
@@ -27,6 +28,8 @@ func _initialize() -> void:
 				_times.append(float(part))
 		elif argument.begins_with("--unlock="):
 			_unlock = int(argument.get_slice("=", 1))
+		elif argument.begins_with("--menu="):
+			_menu = argument.get_slice("=", 1)
 		elif argument == "--play":
 			_play = true
 	_main = load("res://scenes/main.tscn").instantiate()
@@ -49,6 +52,9 @@ func _process(delta: float) -> bool:
 		if _next_pick < _solution.size() and _main.session.engine.occupied_slots() < _main.session.engine.slots.size():
 			_main.session.choose(int(_solution[_next_pick]))
 			_next_pick += 1
+	if not _menu.is_empty() and _clock > 0.3:
+		_main._open_menu(_menu)
+		_menu = ""
 	if _shot < _times.size() and _clock >= _times[_shot]:
 		var image := root.get_viewport().get_texture().get_image()
 		image.save_png("%s_%d.png" % [_out, _shot])

@@ -29,35 +29,67 @@ func open(menu: String) -> void:
 			_daily()
 		"settings":
 			_settings()
+		"records":
+			_records()
 
 
 # --- Levels --------------------------------------------------------------------------
 
+## The world tour: legs of ten cities, each stop showing its number, city, country,
+## best stars and a HARD tag. Locked stops are greyed; the current stop is green.
 func _levels() -> void:
 	var content := _card.open(_t("LEVELS_TITLE"))
-	var grid := GridContainer.new()
-	grid.columns = 5
-	grid.add_theme_constant_override("h_separation", 18)
-	grid.add_theme_constant_override("v_separation", 18)
-	content.add_child(grid)
 	var progress := _context.progress
+	var language := _context.language()
+	var current_row: Control
 	for i in _context.campaign.count():
-		var button := Button.new()
-		button.text = str(i + 1)
-		button.custom_minimum_size = Vector2(150, 150)
-		button.focus_mode = Control.FOCUS_NONE
-		button.add_theme_font_size_override("font_size", 46)
+		if i % WorldTour.STOPS_PER_LEG == 0:
+			var leg := WorldTour.leg_of(i)
+			var header := UiStyle.heading(_t(WorldTour.leg_key(leg)), 44, Palette.WHITE, Palette.INK)
+			header.custom_minimum_size = Vector2(0, 90)
+			content.add_child(header)
+		var stop := WorldTour.stop(i, language)
 		var unlocked := i < progress.unlocked
-		button.disabled = not unlocked
-		if i == progress.current_level:
-			UiStyle.tint_button(button, Palette.BUTTON_GREEN, Palette.BUTTON_GREEN_EDGE)
-		elif unlocked and progress.best_seconds[i] > 0:
-			UiStyle.tint_button(button, Palette.BUTTON_BLUE, Palette.BUTTON_BLUE_EDGE)
+		var hard := LevelTags.is_hard(_context.campaign, i)
+		var stars := "★".repeat(progress.stars[i]) + "☆".repeat(3 - progress.stars[i]) if progress.best_seconds[i] > 0 else ""
+		var detail := stop[1]
+		if hard:
+			detail += "  ·  " + _t("HARD_BADGE")
+		if stars != "":
+			detail += "  ·  " + stars
+		var tone := Palette.BUTTON_GREEN if i == progress.current_level else (Palette.DANGER if hard else Palette.BUTTON_BLUE)
 		var index := i
-		button.pressed.connect(func() -> void:
+		var row := MenuCard.row("%d · %s" % [i + 1, stop[0]], detail, _t("PLAY") if unlocked else "", func() -> void:
 			_card.close_card()
-			level_chosen.emit(index))
-		grid.add_child(button)
+			level_chosen.emit(index), tone if unlocked else Palette.INK_SOFT, unlocked)
+		content.add_child(row)
+		if i == progress.current_level:
+			current_row = row
+	if current_row != null:
+		_card.scroll_to.call_deferred(current_row)
+
+
+# --- Records -------------------------------------------------------------------------
+
+## Personal records (furthest stop, total stars, best time per level) and, when Game
+## Center is signed in, the global rankings for the same two boards.
+func _records() -> void:
+	var content := _card.open(_t("RECORDS_TITLE"))
+	var progress := _context.progress
+	var boards := _context.leaderboards
+	var global := boards != null and boards.is_available()
+	content.add_child(MenuCard.row(_t("RECORD_FURTHEST"), _t("RECORD_FURTHEST_DESC") % [progress.furthest_level(), WorldTour.city(maxi(0, progress.furthest_level() - 1), _context.language())],
+		_t("RANKING") if global else "", func() -> void: boards.show_board(LeaderboardService.FURTHEST_BOARD), Color("16b8a6"), global))
+	content.add_child(MenuCard.row(_t("RECORD_STARS"), "%d / %d ★" % [progress.total_stars(), _context.campaign.count() * 3], "", func() -> void: pass, Palette.INK_SOFT, false))
+	if not global:
+		content.add_child(UiStyle.body(_t("RECORDS_OFFLINE"), 30))
+	for i in _context.campaign.count():
+		var seconds := progress.best_seconds[i]
+		if seconds <= 0:
+			continue
+		var level_id := _context.campaign.level_at(i).id
+		content.add_child(MenuCard.row("%d · %s" % [i + 1, WorldTour.city(i, _context.language())], _t("BEST_TIME") % ("%02d:%02d" % [seconds / 60, seconds % 60]),
+			_t("RANKING") if global else "", func() -> void: boards.show_board(LeaderboardService.level_board(level_id)), Palette.BUTTON_BLUE, global))
 
 
 # --- Shop ----------------------------------------------------------------------------
@@ -113,6 +145,9 @@ func _restore() -> void:
 func _garage() -> void:
 	var content := _card.open(_t("GARAGE_TITLE"))
 	var progress := _context.progress
+	var preview := TrainPreview.new()
+	content.add_child(preview)
+	preview.show_skin(progress.skin_selected)
 	for id: String in Palette.SKIN_ORDER:
 		var livery := Palette.skin(id)
 		var row: PanelContainer
@@ -121,7 +156,10 @@ func _garage() -> void:
 		elif progress.owns_skin(id):
 			row = MenuCard.row(_t(livery["key"]), "", _t("SELECT"), _select_skin.bind(id), Palette.BUTTON_BLUE)
 		elif int(livery["price"]) > 0:
-			row = MenuCard.row(_t(livery["key"]), "", "● %d" % livery["price"], _buy_skin.bind(id), Palette.BUTTON_PRIMARY)
+			row = MenuCard.row(_t(livery["key"]), _t("TAP_TO_PREVIEW"), "● %d" % livery["price"], _buy_skin.bind(id), Palette.BUTTON_PRIMARY)
+			row.gui_input.connect(func(event: InputEvent) -> void:
+				if event is InputEventMouseButton and event.pressed:
+					preview.show_skin(id))
 		else:
 			row = MenuCard.row(_t(livery["key"]), _t("STARTER_ONLY"), _t("MENU_SHOP"), func() -> void: _shop(), Color("ff6f91"))
 		var line := row.get_child(0)

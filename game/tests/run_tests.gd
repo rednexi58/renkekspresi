@@ -7,6 +7,7 @@ const SUITES := {
 	"rules": "res://tests/suites/rules_suite.gd",
 	"parity": "res://tests/suites/parity_suite.gd",
 	"presentation": "res://tests/suites/presentation_suite.gd",
+	"meta": "res://tests/suites/meta_suite.gd",
 }
 
 

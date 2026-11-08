@@ -68,6 +68,12 @@ func open(title: String) -> VBoxContainer:
 	return content
 
 
+## Scrolls the content so `target` (a row of the content column) is in view.
+func scroll_to(target: Control) -> void:
+	if is_instance_valid(target):
+		_scroll.ensure_control_visible(target)
+
+
 func close_card() -> void:
 	visible = false
 	closed.emit()
@@ -100,5 +106,6 @@ static func row(title: String, description: String, action_text: String, action:
 	button.add_theme_font_size_override("font_size", 34)
 	UiStyle.tint_button(button, tone, tone.darkened(0.3))
 	button.pressed.connect(action)
+	button.visible = not action_text.is_empty()
 	line.add_child(button)
 	return panel

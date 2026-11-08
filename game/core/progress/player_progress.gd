@@ -27,10 +27,18 @@ var skin_selected := "classic"
 var owns_vip := false
 var owns_no_ads := false
 var owns_starter := false
+## Best stars (0-3) per level, stars waiting in the star chest, the current win streak,
+## boosters banked for the next level, and the levels whose mechanic intro was shown.
+var stars := PackedByteArray()
+var chest_stars := 0
+var win_streak := 0
+var booster_bank := PackedInt32Array([0, 0, 0])
+var intros_seen := PackedInt32Array()
 
 
 func _init() -> void:
 	best_seconds.resize(LEVEL_COUNT)
+	stars.resize(LEVEL_COUNT)
 
 
 func record_win(level_index: int, seconds: int) -> void:
@@ -41,6 +49,40 @@ func record_win(level_index: int, seconds: int) -> void:
 		best_seconds[level_index] = maxi(1, seconds)
 	unlocked = clampi(maxi(unlocked, level_index + 2), 1, LEVEL_COUNT)
 	current_level = mini(level_index + 1, LEVEL_COUNT - 1)
+
+
+## Keeps the best star count of a level; returns how many stars were newly earned
+## (those, and only those, go into the star chest).
+func record_stars(level_index: int, earned: int) -> int:
+	if level_index < 0 or level_index >= LEVEL_COUNT:
+		return 0
+	var gained := maxi(0, clampi(earned, 0, 3) - stars[level_index])
+	if gained > 0:
+		stars[level_index] = clampi(earned, 0, 3)
+		chest_stars += gained
+	return gained
+
+
+func total_stars() -> int:
+	var total := 0
+	for value in stars:
+		total += value
+	return total
+
+
+## Furthest level completed (1-based), 0 when none.
+func furthest_level() -> int:
+	for i in range(LEVEL_COUNT - 1, -1, -1):
+		if best_seconds[i] > 0:
+			return i + 1
+	return 0
+
+
+## Takes every banked booster out of the bank (they are granted at a level start).
+func take_booster_bank() -> PackedInt32Array:
+	var taken := booster_bank.duplicate()
+	booster_bank = PackedInt32Array([0, 0, 0])
+	return taken
 
 
 func add_coins(amount: int) -> void:
@@ -80,6 +122,11 @@ func to_dict() -> Dictionary:
 		"owns_vip": owns_vip,
 		"owns_no_ads": owns_no_ads,
 		"owns_starter": owns_starter,
+		"stars": Array(stars),
+		"chest_stars": chest_stars,
+		"win_streak": win_streak,
+		"booster_bank": Array(booster_bank),
+		"intros_seen": Array(intros_seen),
 	}
 
 
@@ -113,4 +160,18 @@ static func from_dict(data: Dictionary) -> PlayerProgress:
 	progress.owns_vip = bool(data.get("owns_vip", false))
 	progress.owns_no_ads = bool(data.get("owns_no_ads", false))
 	progress.owns_starter = bool(data.get("owns_starter", false))
+	var saved_stars: Variant = data.get("stars", [])
+	if saved_stars is Array:
+		for i in mini(LEVEL_COUNT, (saved_stars as Array).size()):
+			progress.stars[i] = clampi(int((saved_stars as Array)[i]), 0, 3)
+	progress.chest_stars = maxi(0, int(data.get("chest_stars", 0)))
+	progress.win_streak = maxi(0, int(data.get("win_streak", 0)))
+	var bank: Variant = data.get("booster_bank", [])
+	if bank is Array:
+		for i in mini(3, (bank as Array).size()):
+			progress.booster_bank[i] = clampi(int((bank as Array)[i]), 0, 99)
+	var seen: Variant = data.get("intros_seen", [])
+	if seen is Array:
+		for value: Variant in seen:
+			progress.intros_seen.append(clampi(int(value), 0, LEVEL_COUNT - 1))
 	return progress

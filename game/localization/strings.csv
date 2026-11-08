@@ -27,7 +27,7 @@ BTN_RESTART,Restart,Yeniden başla
 PAUSE_TITLE,Paused,Duraklatıldı
 ALL_DONE,All 100 levels complete!,100 bölümün hepsi bitti!
 PLAY_LEVEL,Play · Level %d,Oyna · Bölüm %d
-MENU_LEVELS,Levels,Bölümler
+MENU_LEVELS,World Tour,Dünya Turu
 MENU_SHOP,Shop,Mağaza
 MENU_GARAGE,Garage,Garaj
 MENU_DAILY,Daily gift,Günlük hediye
@@ -88,5 +88,49 @@ BTN_BUY_COINS,Buy · %d coins,Satın al · %d coin
 BTN_WATCH_AD,Watch ad · +1,Reklam izle · +1
 TUTORIAL_1,"Tap a wagon whose arrow path is clear. It goes to the station and collects wagons of its colour from the train.","Oku açık olan bir vagona dokun. İstasyona gider ve trendeki kendi rengindeki vagonları toplar."
 TUTORIAL_2,Collect every wagon before the train reaches the end of the track!,Tren rayın sonuna varmadan bütün vagonları topla!
-LEVELS_TITLE,Levels,Bölümler
+LEVELS_TITLE,World Tour,Dünya Turu
 APP_TITLE,Color Express,Renk Ekspresi
+STREAK_BOOSTERS,"Win streak %d: free boosters!","%d galibiyet serisi: bedava güçlendirici!"
+INTRO_TITLE,New on this line!,Bu hatta yeni!
+INTRO_MORE_COLORS,"A new colour joins the trains. Watch the incoming wagons and keep a slot free for it.","Trenlere yeni bir renk katılıyor. Gelen vagonları izle, ona bir yuva boş bırak."
+INTRO_TWO_TRAINS,"Two trains at once! Each runs on its own track, but they share your shelf.","Aynı anda iki tren! Her biri kendi hattında gider ama rafını paylaşırlar."
+INTRO_THREE_TRAINS,"Three trains now. Plan the shelf for the colours that arrive first.","Artık üç tren var. Rafı önce gelecek renklere göre planla."
+INTRO_FOUR_TRAINS,"Four trains: the grand junction! Use boosters wisely.","Dört tren: büyük kavşak! Güçlendiricileri akıllıca kullan."
+INTRO_BIG_YARD,"A bigger yard: more collectors, more blocked paths. Open the way first.","Daha büyük bir saha: daha çok toplayıcı, daha çok kapalı yol. Önce yolu aç."
+HARD_TITLE,Hard level!,Zor bölüm!
+HARD_BODY,"This one is tough, but the reward is x%d coins.","Bu bölüm zorlu ama ödülü x%d altın."
+HARD_BADGE,HARD,ZOR
+BTN_GO,Let's go,Başla
+COMBO_N,Combo x%d!,Kombo x%d!
+STREAK_WARNING,"You will lose your %d-win streak!","%d galibiyet serini kaybedeceksin!"
+WIN_TITLE_CITY,Arrived: %s!,Varış: %s!
+WIN_TIME,Time %s %s,Süre %s %s
+NEW_RECORD,· New record!,· Yeni rekor!
+WIN_COMBO,"Best combo x%d: +%d ●","En iyi kombo x%d: +%d ●"
+WIN_NEAR_MISS,"Near miss bonus: +%d ●","Kıl payı bonusu: +%d ●"
+WIN_HARD,"Hard level bonus: +%d ●","Zor bölüm bonusu: +%d ●"
+CHEST_OPENED,"Star chest opened! +%d ● and 1 of each booster","Yıldız sandığı açıldı! +%d ● ve her güçlendiriciden 1"
+CHEST_PROGRESS,Star chest: %d/%d ★,Yıldız sandığı: %d/%d ★
+STREAK_NOW,Win streak: %d,Galibiyet serisi: %d
+NEAR_MISS,Near miss!,Kıl payı!
+MENU_RECORDS,Records,Rekorlar
+HOME_STATUS,"Next: %s  ·  Streak %d  ·  Chest %d/%d ★","Sıradaki: %s  ·  Seri %d  ·  Sandık %d/%d ★"
+PLAY,Play,Oyna
+RECORDS_TITLE,Records,Rekorlar
+RECORD_FURTHEST,Furthest stop,En uzak durak
+RECORD_FURTHEST_DESC,Level %d · %s,Bölüm %d · %s
+RECORD_STARS,Stars collected,Toplanan yıldız
+RECORDS_OFFLINE,"Sign in to Game Center to compare with players worldwide.","Dünyadaki oyuncularla karşılaştırmak için Game Center'a giriş yap."
+RANKING,Ranking,Sıralama
+BEST_TIME,Best time %s,En iyi süre %s
+TAP_TO_PREVIEW,Tap to preview,Önizlemek için dokun
+LEG_EUROPE_WEST,Southern Europe,Güney Avrupa
+LEG_EUROPE_NORTH,Northern Europe,Kuzey Avrupa
+LEG_EUROPE_EAST,Central & Eastern Europe,Orta ve Doğu Avrupa
+LEG_AFRICA,Africa,Afrika
+LEG_MIDDLE_EAST,Caucasus & Middle East,Kafkasya ve Orta Doğu
+LEG_SOUTH_ASIA,South Asia,Güney Asya
+LEG_EAST_ASIA,East & Southeast Asia,Doğu ve Güneydoğu Asya
+LEG_OCEANIA,Pacific & Oceania,Pasifik ve Okyanusya
+LEG_AMERICAS_SOUTH,South America,Güney Amerika
+LEG_AMERICAS_NORTH,North America,Kuzey Amerika

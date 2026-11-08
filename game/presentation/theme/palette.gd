@@ -91,5 +91,11 @@ static func scene_ground(theme_id: int) -> Color:
 	return SCENE_GROUNDS[clampi(theme_id, 0, SCENE_GROUNDS.size() - 1)]
 
 
+## Colour of a "Combo xN" text: warmer and hotter as the combo grows.
+static func combo(length: int) -> Color:
+	const STEPS: Array[Color] = [Color("ffe066"), Color("ffb21e"), Color("ff7a1e"), Color("ff4b4b"), Color("ff3df0")]
+	return STEPS[clampi(length - 2, 0, STEPS.size() - 1)]
+
+
 static func wagon(color_id: int) -> Color:
 	return WAGONS[clampi(color_id, 0, WAGONS.size() - 1)]

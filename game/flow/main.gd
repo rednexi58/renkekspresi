@@ -33,6 +33,8 @@ var menus: Menus
 var toaster: Toaster
 var _reward_guard := RewardGuard.new()
 var _last_win_coins := 0
+var _combo := ComboTracker.new()
+var _peak_danger := 0.0
 
 
 func _ready() -> void:
@@ -45,6 +47,8 @@ func _ready() -> void:
 	context.commerce.entitlements_changed.connect(_on_entitlements_changed)
 	context.audio = AudioService.new()
 	add_child(context.audio)
+	context.leaderboards = LeaderboardService.create()
+	add_child(context.leaderboards)
 	context.apply_settings()
 	_build_ui()
 	var requested := _requested_level()
@@ -143,12 +147,45 @@ func start_level(index: int) -> void:
 	session.ticked.connect(_sync)
 	session.finished.connect(_on_finished)
 	session.slots_changed.connect(_sync)
-	hud.show_level(level)
+	_combo.reset()
+	_peak_danger = 0.0
+	var hard := LevelTags.is_hard(context.campaign, level_index)
+	hud.show_level(level, WorldTour.city(level_index, context.language()), hard)
+	_grant_starting_boosters()
 	_sync()
 	_frame_camera.call_deferred()
 	context.audio.play("whistle")
 	if level_index == 0 and not context.progress.tutorial_done:
 		_show_tutorial()
+	else:
+		_show_level_intro(hard)
+
+
+## Win-streak boosters plus any boosters banked from star chests.
+func _grant_starting_boosters() -> void:
+	var progress := context.progress
+	var streak := WinStreak.boosters_for(progress.win_streak)
+	var bank := progress.take_booster_bank()
+	var total := PackedInt32Array([streak[0] + bank[0], streak[1] + bank[1], streak[2] + bank[2]])
+	session.engine.add_starting_boosters(total)
+	if bank != PackedInt32Array([0, 0, 0]):
+		context.save()
+	if progress.win_streak > 0:
+		toaster.show_message(tr("STREAK_BOOSTERS") % progress.win_streak)
+
+
+## A new mechanic gets an explanation the first time; hard levels get a warning.
+func _show_level_intro(hard: bool) -> void:
+	var progress := context.progress
+	var intro := LevelTags.intro(context.campaign, level_index)
+	if intro != LevelTags.Intro.NONE and not progress.intros_seen.has(level_index):
+		progress.intros_seen.append(level_index)
+		context.save()
+		session.paused = true
+		dialog.present(tr("INTRO_TITLE"), tr(LevelTags.INTRO_KEYS[intro]), [[tr("BTN_OK"), DialogOverlay.Tone.GREEN, _resume]], Palette.BUTTON_BLUE)
+	elif hard and progress.best_seconds[level_index] == 0:
+		session.paused = true
+		dialog.present(tr("HARD_TITLE"), tr("HARD_BODY") % LevelTags.HARD_REWARD_FACTOR, [[tr("BTN_GO"), DialogOverlay.Tone.PRIMARY, _resume]], Palette.DANGER)
 
 
 func _teardown_level() -> void:
@@ -184,6 +221,8 @@ func _sync() -> void:
 		return
 	world.sync(session.engine)
 	hud.refresh(session.engine, session.is_active())
+	if session.engine.is_playing():
+		_peak_danger = maxf(_peak_danger, session.engine.danger())
 
 
 # --- Input ---------------------------------------------------------------------------
@@ -225,6 +264,14 @@ func _on_choice_rejected(collector_id: int, result: PuzzleEngine.ChooseResult, b
 func _on_matched(event: MatchEvent) -> void:
 	world.play_match(event)
 	context.audio.play("match")
+	if not event.completes:
+		return
+	var combo := _combo.register(session.engine.elapsed)
+	if combo >= 2:
+		var scene := world.scene_rect()
+		var at := Vector2(scene.get_center().x, scene.end.y - 120.0)
+		world.fx.float_text(tr("COMBO_N") % combo, at, Palette.combo(combo), 64 + mini(combo, 6) * 6)
+		context.haptic(10 + mini(combo, 5) * 4)
 
 
 func _on_booster(kind: int) -> void:
@@ -266,11 +313,23 @@ func _on_pause() -> void:
 		return
 	session.paused = true
 	_sync()
-	dialog.present(tr("PAUSE_TITLE"), "", [
+	var warning := tr("STREAK_WARNING") % context.progress.win_streak if context.progress.win_streak > 0 else ""
+	dialog.present(tr("PAUSE_TITLE"), warning, [
 		[tr("BTN_RESUME"), DialogOverlay.Tone.GREEN, _resume],
-		[tr("BTN_RESTART"), DialogOverlay.Tone.BLUE, func() -> void: start_level(level_index)],
-		[tr("BTN_HOME"), DialogOverlay.Tone.PRIMARY, show_home],
+		[tr("BTN_RESTART"), DialogOverlay.Tone.BLUE, func() -> void:
+			_forfeit_streak()
+			start_level(level_index)],
+		[tr("BTN_HOME"), DialogOverlay.Tone.PRIMARY, func() -> void:
+			_forfeit_streak()
+			show_home()],
 	])
+
+
+## Leaving or losing a level ends the win streak.
+func _forfeit_streak() -> void:
+	if context.progress.win_streak > 0:
+		context.progress.win_streak = 0
+		context.save()
 
 
 func _resume() -> void:
@@ -328,18 +387,49 @@ func _on_finished(won: bool) -> void:
 func _on_win() -> void:
 	var engine := session.engine
 	var progress := context.progress
+	var level := context.campaign.level_at(level_index)
 	world.play_win()
 	context.audio.play("win")
-	_last_win_coins = Economy.win_coins(engine.assisted)
-	progress.record_win(level_index, int(engine.elapsed))
+	var hard := LevelTags.is_hard(context.campaign, level_index)
+	var result := RunResult.score(engine.assisted, engine.revives, _peak_danger, _combo.best, hard)
+	var seconds := maxi(1, int(engine.elapsed))
+	var was_record := progress.best_seconds[level_index] == 0 or seconds < progress.best_seconds[level_index]
+	_last_win_coins = result.total_coins()
+	progress.record_win(level_index, seconds)
+	progress.record_stars(level_index, result.stars)
 	progress.add_coins(_last_win_coins)
 	progress.piggy_coins = Economy.piggy_after_win(progress.piggy_coins)
 	progress.wins_since_interstitial += 1
+	progress.win_streak += 1
+	var lines := PackedStringArray()
+	lines.append("★".repeat(result.stars) + "☆".repeat(3 - result.stars))
+	lines.append(tr("WIN_TIME") % ["%02d:%02d" % [seconds / 60, seconds % 60], tr("NEW_RECORD") if was_record else ""])
+	lines.append(tr("WIN_COINS") % result.base_coins)
+	if result.combo_coins > 0:
+		lines.append(tr("WIN_COMBO") % [_combo.best, result.combo_coins])
+	if result.near_miss:
+		lines.append(tr("WIN_NEAR_MISS") % result.near_miss_coins)
+	if result.hard_bonus > 0:
+		lines.append(tr("WIN_HARD") % result.hard_bonus)
+	if StarChest.is_full(progress.chest_stars):
+		progress.chest_stars -= StarChest.STARS_TO_OPEN
+		progress.add_coins(StarChest.COINS)
+		for kind in 3:
+			progress.booster_bank[kind] += StarChest.BOOSTERS[kind]
+		lines.append(tr("CHEST_OPENED") % StarChest.COINS)
+	else:
+		lines.append(tr("CHEST_PROGRESS") % [progress.chest_stars, StarChest.STARS_TO_OPEN])
+	lines.append(tr("STREAK_NOW") % progress.win_streak)
 	context.save()
-	var seconds := int(engine.elapsed)
-	var body := tr("WIN_BODY") % ["%02d:%02d" % [seconds / 60, seconds % 60], engine.taps] + "\n" + tr("WIN_COINS") % _last_win_coins
+	context.leaderboards.submit_level_time(level.id, seconds)
+	context.leaderboards.submit_furthest(progress.furthest_level())
+	var scene := world.scene_rect()
+	world.fx.coin_burst(scene.get_center(), Vector2(scene.end.x - 120.0, scene.position.y + 80.0), 12)
+	if result.near_miss:
+		world.fx.float_text(tr("NEAR_MISS"), scene.get_center(), Palette.DANGER, 90)
 	var last := level_index >= context.campaign.count() - 1
-	var buttons := [[tr("ALL_DONE") if last else tr("BTN_NEXT"), DialogOverlay.Tone.GREEN, _after_win.bind(0 if last else level_index + 1)]]
+	var next := 0 if last else level_index + 1
+	var buttons := [[tr("ALL_DONE") if last else tr("BTN_NEXT"), DialogOverlay.Tone.GREEN, _after_win.bind(next)]]
 	if context.commerce.can_show_rewarded():
 		buttons.append([tr("BTN_DOUBLE"), DialogOverlay.Tone.PRIMARY, func() -> void:
 			var token := _reward_guard.begin()
@@ -349,9 +439,10 @@ func _on_win() -> void:
 					progress.add_coins(extra)
 					context.save()
 					toaster.show_message(tr("WIN_COINS") % extra)
-				_after_win(0 if last else level_index + 1))])
+				_after_win(next))])
 	buttons.append([tr("BTN_HOME"), DialogOverlay.Tone.BLUE, show_home])
-	dialog.present(tr("WIN_TITLE"), body, buttons, Palette.GOLD)
+	var title := tr("WIN_TITLE_CITY") % WorldTour.city(level_index, context.language())
+	dialog.present(title, "\n".join(lines), buttons, Palette.GOLD)
 
 
 ## Interstitials are paced by Economy and never shown to No Ads owners.
@@ -387,9 +478,16 @@ func _on_loss() -> void:
 						_revive()
 					else:
 						_on_loss())])
-	buttons.append([tr("BTN_RETRY"), DialogOverlay.Tone.BLUE, func() -> void: start_level(level_index)])
-	buttons.append([tr("BTN_HOME"), DialogOverlay.Tone.BLUE, show_home])
-	dialog.present(tr("LOSE_TITLE"), tr("LOSE_BODY"), buttons, Palette.DANGER)
+	buttons.append([tr("BTN_RETRY"), DialogOverlay.Tone.BLUE, func() -> void:
+		_forfeit_streak()
+		start_level(level_index)])
+	buttons.append([tr("BTN_HOME"), DialogOverlay.Tone.BLUE, func() -> void:
+		_forfeit_streak()
+		show_home()])
+	var body := tr("LOSE_BODY")
+	if context.progress.win_streak > 0:
+		body += "\n" + tr("STREAK_WARNING") % context.progress.win_streak
+	dialog.present(tr("LOSE_TITLE"), body, buttons, Palette.DANGER)
 
 
 func _revive() -> void:

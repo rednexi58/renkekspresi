@@ -269,6 +269,15 @@ func grant_booster(kind: int) -> bool:
 	return true
 
 
+## Adds boosters granted before play starts (win streak, star chest). Ignored once the
+## level is over; counts below zero are ignored.
+func add_starting_boosters(counts: PackedInt32Array) -> void:
+	if status != Status.PLAYING:
+		return
+	for kind in mini(3, counts.size()):
+		booster_stock[kind] += maxi(0, counts[kind])
+
+
 ## Applies a booster. Matches it creates are appended to `events`.
 func use_booster(kind: int, events: Array[MatchEvent]) -> BoosterResult:
 	if status != Status.PLAYING or kind < 0 or kind > 2:
@@ -486,6 +495,8 @@ func _remove(wagon: WagonState, slot_index: int, events: Array[MatchEvent], blas
 		slot.clear()
 	else:
 		slot.ready_at = elapsed + SLOT_RETRY_DELAY
-	events.append(MatchEvent.new(wagon, collector_id, slot_index))
+	var event := MatchEvent.new(wagon, collector_id, slot_index)
+	event.completes = collector.remaining <= 0
+	events.append(event)
 	wagons.erase(wagon)
 	recoils[wagon.lane] += brake_distance

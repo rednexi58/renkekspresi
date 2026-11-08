@@ -21,6 +21,8 @@ var _safe := Rect2()
 var _top: Control
 var _bottom: Control
 var _title: Label
+var _city: Label
+var _hard: PanelContainer
 var _counter: Label
 var _progress: ProgressTrack
 var _boosters: Array[BoosterButton] = []
@@ -65,6 +67,17 @@ func _build_top() -> void:
 	_progress.position = Vector2(200, 42)
 	_progress.size = Vector2(560, 80)
 	_top.add_child(_progress)
+	_city = UiStyle.heading("", 30, Palette.WHITE, Palette.INK)
+	_city.position = Vector2(200, 118)
+	_city.size = Vector2(560, 44)
+	_city.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_top.add_child(_city)
+	_hard = PanelContainer.new()
+	_hard.add_theme_stylebox_override("panel", UiStyle.pill(Palette.DANGER, Palette.DANGER.darkened(0.35)))
+	_hard.position = Vector2(830, 140)
+	_hard.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hard.add_child(UiStyle.heading(tr("HARD_BADGE"), 30, Palette.WHITE, Palette.DANGER.darkened(0.5)))
+	_top.add_child(_hard)
 	var chip := PanelContainer.new()
 	chip.add_theme_stylebox_override("panel", UiStyle.pill(Palette.PANEL, Palette.PANEL_EDGE))
 	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -126,8 +139,10 @@ func _safe_rect() -> Rect2:
 	return Rect2(safe.position * ratio, safe.size * ratio)
 
 
-func show_level(level: LevelDefinition) -> void:
+func show_level(level: LevelDefinition, city: String, hard: bool) -> void:
 	_title.text = tr("LEVEL_N") % level.id
+	_city.text = city
+	_hard.visible = hard
 
 
 func refresh(engine: PuzzleEngine, boosters_enabled: bool) -> void:
