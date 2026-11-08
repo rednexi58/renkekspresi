@@ -1,69 +1,71 @@
 class_name CameraRig
 extends Camera3D
-## A fixed perspective camera that frames the whole diorama inside the screen area left
-## free by the HUD, on any aspect ratio (iPhone SE to Pro Max, iPad).
+## Orthographic camera looking down at a fixed pitch, as top casual puzzlers do: no
+## perspective distortion, so pieces read as clean shapes and stay the same size wherever
+## they are on the board.
 ##
-## The fit is solved numerically: for a fixed pitch and field of view, it searches the
-## camera distance and the look-at point so every key point projects inside the target
-## rectangle with a margin. Solving instead of hand-tuning per device is what keeps the
-## yard fully tappable on every screen.
+## frame() fits the board and shelf into the lower screen area, then returns where the
+## train scene must be placed (and how much it must be scaled) to fill the upper area.
+## The board therefore always gets the same generous size, however large a level's route
+## is, and the layout adapts to every aspect ratio and safe area.
 
-const PITCH_DEGREES := 56.0
-const FIELD_OF_VIEW := 30.0
-const MARGIN := 0.02
-const ITERATIONS := 40
+const PITCH_DEGREES := 60.0
+const DISTANCE := 60.0
+const BOARD_FILL := 0.94
+const SCENE_FILL := 0.94
 
-var _points: PackedVector3Array = PackedVector3Array()
 var _shake := 0.0
 var _base_position := Vector3.ZERO
+var _pixels_per_unit := 1.0
 
 
 func _ready() -> void:
-	fov = FIELD_OF_VIEW
-	near = 0.5
-	far = 220.0
-	rotation_degrees = Vector3(-PITCH_DEGREES, 0.0, 0.0)
+	projection = Camera3D.PROJECTION_ORTHOGONAL
+	keep_aspect = Camera3D.KEEP_WIDTH
+	near = 1.0
+	far = 200.0
 
 
-## Points that must stay visible (rail ends, station corners, yard corners, scenery tops).
-func set_subject(points: PackedVector3Array) -> void:
-	_points = points
-
-
-## Frames the subject inside `target` (viewport pixels).
-func frame(target: Rect2) -> void:
+## Fits `board` (ground rectangle; heights up to `board_height`) into `board_target`,
+## and returns the transform that maps the scene's local `scene_bounds` (ground
+## rectangle, heights up to `scene_height`) into `scene_target`. Targets are in
+## viewport pixels.
+func frame(board: Rect2, board_height: float, board_target: Rect2, scene_bounds: Rect2, scene_height: float, scene_target: Rect2) -> Transform3D:
 	var viewport_size := get_viewport().get_visible_rect().size
-	if _points.is_empty() or viewport_size.x <= 0.0 or target.size.x <= 0.0:
-		return
-	# Target rectangle in normalised device coordinates (-1..1, y up).
-	var left := target.position.x / viewport_size.x * 2.0 - 1.0 + MARGIN
-	var right := target.end.x / viewport_size.x * 2.0 - 1.0 - MARGIN
-	var top := 1.0 - target.position.y / viewport_size.y * 2.0 - MARGIN
-	var bottom := 1.0 - target.end.y / viewport_size.y * 2.0 + MARGIN
-	var aspect := viewport_size.x / viewport_size.y
-	var tan_y := tan(deg_to_rad(fov) * 0.5)
-	var tan_x := tan_y * aspect
-	var basis_now := Basis.from_euler(Vector3(deg_to_rad(-PITCH_DEGREES), 0.0, 0.0))
-	var forward := -basis_now.z
-	var centre := _centroid()
-	var low := 5.0
-	var high := 200.0
-	var look := centre
-	for i in ITERATIONS:
-		var distance := (low + high) * 0.5
-		look = _centre_look(look, distance, basis_now, tan_x, tan_y, left, right, top, bottom)
-		var extent := _extent(look - forward * distance, basis_now, tan_x, tan_y)
-		if extent.position.x >= left and extent.end.x <= right and extent.position.y >= bottom and extent.end.y <= top:
-			high = distance
-		else:
-			low = distance
-	var final_distance := high
-	look = _centre_look(look, final_distance, basis_now, tan_x, tan_y, left, right, top, bottom)
-	_base_position = look - forward * final_distance
-	transform = Transform3D(basis_now, _base_position)
+	var pitch := deg_to_rad(PITCH_DEGREES)
+	var sin_p := sin(pitch)
+	var cos_p := cos(pitch)
+	_pixels_per_unit = minf(board_target.size.x * BOARD_FILL / board.size.x,
+		board_target.size.y * BOARD_FILL / (board.size.y * sin_p + board_height * cos_p))
+	size = viewport_size.x / _pixels_per_unit
+	# Ground point that sits at the centre of the screen.
+	var board_centre := board.get_center()
+	var target_centre := board_target.get_center()
+	var centre_x := board_centre.x - (target_centre.x - viewport_size.x * 0.5) / _pixels_per_unit
+	var lift := board_height * 0.5 * cos_p
+	var centre_z := board_centre.y - (target_centre.y - viewport_size.y * 0.5) / (sin_p * _pixels_per_unit) - lift / sin_p
+	var view := Basis.from_euler(Vector3(-pitch, 0.0, 0.0))
+	_base_position = Vector3(centre_x, 0.0, centre_z) - (-view.z) * DISTANCE
+	transform = Transform3D(view, _base_position)
+	# Scene placement: uniform scale into the free area above the shelf.
+	var width_units := scene_target.size.x * SCENE_FILL / _pixels_per_unit
+	var depth_units := scene_target.size.y * SCENE_FILL / (sin_p * _pixels_per_unit)
+	var factor := minf(width_units / scene_bounds.size.x, depth_units / (scene_bounds.size.y + scene_height * cos_p / sin_p))
+	var scene_centre := scene_target.get_center()
+	var ground_x := centre_x + (scene_centre.x - viewport_size.x * 0.5) / _pixels_per_unit
+	var ground_z := centre_z + (scene_centre.y - viewport_size.y * 0.5) / (sin_p * _pixels_per_unit) + scene_height * 0.5 * factor * cos_p / sin_p
+	var local_centre := scene_bounds.get_center()
+	return Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * factor), Vector3(ground_x - local_centre.x * factor, 0.0, ground_z - local_centre.y * factor))
 
 
-## Brief screen shake (e.g. when the train hits the final stop).
+## Ground-plane Z that appears at screen row `y` (used to size background planes).
+func ground_z_at_screen_y(y: float) -> float:
+	var viewport_size := get_viewport().get_visible_rect().size
+	var pitch := deg_to_rad(PITCH_DEGREES)
+	var centre := _base_position + (-transform.basis.z) * DISTANCE
+	return centre.z + (y - viewport_size.y * 0.5) / (sin(pitch) * _pixels_per_unit)
+
+
 func shake(strength: float = 0.35) -> void:
 	_shake = strength
 
@@ -72,43 +74,6 @@ func _process(delta: float) -> void:
 	if _shake <= 0.0:
 		return
 	_shake = maxf(0.0, _shake - delta * 1.2)
-	position = _base_position + Vector3(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0), 0.0) * _shake * 0.4
-
-
-func _centroid() -> Vector3:
-	var sum := Vector3.ZERO
-	for p in _points:
-		sum += p
-	return sum / _points.size()
-
-
-## Projected NDC bounds of all subject points for a camera at `origin`.
-func _extent(origin: Vector3, view: Basis, tan_x: float, tan_y: float) -> Rect2:
-	var low := Vector2(INF, INF)
-	var high := Vector2(-INF, -INF)
-	for p in _points:
-		var local := view.inverse() * (p - origin)
-		var depth := -local.z
-		if depth <= 0.01:
-			return Rect2(Vector2(-INF, -INF), Vector2(INF, INF))
-		var ndc := Vector2(local.x / (depth * tan_x), local.y / (depth * tan_y))
-		low = Vector2(minf(low.x, ndc.x), minf(low.y, ndc.y))
-		high = Vector2(maxf(high.x, ndc.x), maxf(high.y, ndc.y))
-	return Rect2(low, high - low)
-
-
-## Moves the look-at point (in the ground plane) so the projected subject is centred in
-## the target rectangle at the given distance.
-func _centre_look(look: Vector3, distance: float, view: Basis, tan_x: float, tan_y: float,
-		left: float, right: float, top: float, bottom: float) -> Vector3:
-	var forward := -view.z
-	var result := look
-	for i in 8:
-		var extent := _extent(result - forward * distance, view, tan_x, tan_y)
-		if not is_finite(extent.size.x):
-			return result
-		var error := Vector2((left + right) * 0.5, (top + bottom) * 0.5) - extent.get_center()
-		# Convert NDC error to world units at the subject's distance.
-		result.x -= error.x * distance * tan_x
-		result.z += error.y * distance * tan_y / sin(deg_to_rad(PITCH_DEGREES))
-	return result
+	position = _base_position + Vector3(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0), 0.0) * _shake * 0.3
+	if _shake == 0.0:
+		position = _base_position

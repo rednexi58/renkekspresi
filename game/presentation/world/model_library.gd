@@ -86,42 +86,78 @@ func textured(name: String, colors: PackedColorArray, frequency: float, scale: f
 	return made
 
 
-func grass(base: Color) -> StandardMaterial3D:
-	return textured("grass", PackedColorArray([base.darkened(0.22), base.darkened(0.06), base, base.lightened(0.12), base.lightened(0.05)]), 0.045, 0.09)
+## Large flat backgrounds (grass, board floor, path) are unshaded so they show exactly
+## their palette colour on every device; contact shadows still darken them locally.
+func ground(base: Color) -> StandardMaterial3D:
+	var made := textured("ground", PackedColorArray([base.darkened(0.05), base, base.lightened(0.04), base]), 0.05, 0.08, 1.0)
+	made.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	return made
 
 
-func gravel(base: Color) -> StandardMaterial3D:
-	return textured("gravel", PackedColorArray([base.darkened(0.35), base.darkened(0.12), base, base.lightened(0.18)]), 0.32, 0.22, 0.95, true)
+## Painted wooden panels: the colour is given, the plank grooves come from a generated
+## normal map so the surface catches light like a real painted wagon.
+func painted(color: Color, roughness: float = 0.5) -> StandardMaterial3D:
+	var key := "painted|%s|%.2f" % [color.to_html(), roughness]
+	if _materials.has(key):
+		return _materials[key]
+	var made := StandardMaterial3D.new()
+	made.albedo_color = color
+	made.roughness = roughness
+	made.metallic_specular = 0.55
+	made.normal_enabled = true
+	made.normal_texture = _plank_normals()
+	made.normal_scale = 0.35
+	made.uv1_triplanar = true
+	made.uv1_scale = Vector3.ONE * 1.4
+	_materials[key] = made
+	return made
 
 
-func wood() -> StandardMaterial3D:
-	return textured("wood", PackedColorArray([Color("4d3426"), Color("6b4a35"), Color("7d5940")]), 0.12, 0.6, 0.9)
-
-
-func concrete(base: Color) -> StandardMaterial3D:
-	return textured("concrete", PackedColorArray([base.darkened(0.08), base, base.lightened(0.05), base.darkened(0.03)]), 0.08, 0.25, 0.85)
+func _plank_normals() -> Texture2D:
+	if _materials.has("plank_normals"):
+		return _materials["plank_normals"]
+	var size := 128
+	var image := Image.create(size, size, false, Image.FORMAT_RGB8)
+	var noise := FastNoiseLite.new()
+	noise.frequency = 0.08
+	for y in size:
+		for x in size:
+			var groove := 1.0
+			var local := x % 32
+			if local < 2:
+				groove = 0.15 + local * 0.2
+			var grain := noise.get_noise_2d(x * 0.3, y * 4.0) * 0.08
+			var v := clampf(groove * 0.85 + grain + 0.1, 0.0, 1.0)
+			image.set_pixel(x, y, Color(v, v, v))
+	image.bump_map_to_normal_map(3.0)
+	image.generate_mipmaps()
+	var texture := ImageTexture.create_from_image(image)
+	_materials["plank_normals"] = texture
+	return texture
 
 
 func _role_material(role: String, paint: Color) -> Material:
 	match role:
 		"paint":
-			return material(paint, 0.42)
-		"paint_shade":
-			return material(paint.darkened(0.14), 0.5)
+			return painted(paint, 0.45)
 		"roof":
-			return material(paint.lightened(0.06), 0.5)
-		"frame":
-			return material(Palette.CHASSIS, 0.7, 0.2)
-		"steel":
-			return material(Palette.STEEL, 0.35, 0.6)
+			return painted(paint.lightened(0.16), 0.5)
+		"trim":
+			return material(paint.darkened(0.22), 0.5)
+		"chassis":
+			return material(Palette.CHASSIS, 0.65)
 		"wheel":
-			return material(Palette.WHEEL, 0.45, 0.5)
-		"glass":
-			return material(Palette.GLASS, 0.08, 0.2)
+			return material(Palette.WHEEL, 0.5, 0.2)
+		"hub":
+			return material(Palette.HUB, 0.3, 0.6)
+		"engine":
+			return material(Palette.ENGINE_BODY, 0.4)
+		"cab":
+			return material(Palette.ENGINE_CAB, 0.45)
+		"brass":
+			return material(Palette.BRASS, 0.3, 0.6)
 		"lamp":
-			return material(Palette.LAMP, 0.3, 0.0, 1.4)
-		"stripe":
-			return material(Palette.ENGINE_STRIPE, 0.4)
+			return material(Palette.LAMP, 0.3, 0.0, 0.9)
 	return material(paint)
 
 
@@ -134,13 +170,13 @@ func _dress(mesh: ArrayMesh, paint: Color) -> MeshInstance3D:
 
 
 func make_wagon(color_id: int) -> MeshInstance3D:
-	var wagon := _dress(RollingStock.boxcar(), Palette.wagon(color_id))
-	wagon.name = "Boxcar"
+	var wagon := _dress(WagonModels.wagon(), Palette.wagon(color_id))
+	wagon.name = "Wagon"
 	return wagon
 
 
 func make_locomotive() -> MeshInstance3D:
-	var engine := _dress(RollingStock.locomotive(), Palette.ENGINE_BODY)
+	var engine := _dress(WagonModels.locomotive(), Palette.ENGINE_BODY)
 	engine.name = "Locomotive"
 	return engine
 

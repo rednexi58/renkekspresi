@@ -1,160 +1,161 @@
 class_name LevelWorld
 extends Node3D
-## Composes the 3D diorama of one level (environment, scenery, rails, station, yard,
-## train, camera) and exposes the few operations the game flow needs. It owns no rules:
-## everything it shows is read from the PuzzleEngine passed to sync().
+## Composes one level's 3D view in three bands, top to bottom: the train scene, the
+## station shelf and the collector board, framed by one orthographic camera. Owns no
+## rules: everything shown is read from the PuzzleEngine passed to sync().
 
-const CONFETTI_COLORS_COUNT := 5
+const SCENE_SHARE := 0.36
+const BAND_GAP := 24.0
 
 var camera: CameraRig
 var _models := ModelLibrary.new()
 var _layout: WorldLayout
-var _routes: Array[RailRoute] = []
-var _zones: Array[MeshInstance3D] = []
+var _scene: SceneView
 var _train: TrainView
-var _station: StationView
-var _yard: YardView
+var _shelf: ShelfView
+var _board: BoardView
+var _zones: Array[MeshInstance3D] = []
+var _grass: MeshInstance3D
+var _floor: MeshInstance3D
+var _band: MeshInstance3D
+var _band_shadow: MeshInstance3D
 var _zone_pulse := 0.0
 
 
 func build(level: LevelDefinition, routes: Array[RailRoute], engine: PuzzleEngine) -> void:
-	_routes = routes
 	_layout = WorldLayout.new(level)
-	var colors := Palette.theme(level.theme)
-	_add_environment(colors["clear"])
-	var tracks := TrackBuilder.new(_models)
-	var scenery := Node3D.new()
-	scenery.name = "Scenery"
-	add_child(scenery)
-	SceneryBuilder.new(_models).build(scenery, level, routes, _layout)
-	var track := Node3D.new()
-	track.name = "Track"
-	add_child(track)
-	_zones = tracks.build(track, routes, engine, colors["gravel"])
-	_station = StationView.new()
-	_station.name = "Station"
-	add_child(_station)
-	_station.setup(_models, _layout, tracks)
-	_yard = YardView.new()
-	_yard.name = "Yard"
-	add_child(_yard)
-	_yard.setup(_models, _layout, tracks, engine)
+	_add_environment()
+	_grass = _models.shape_with(self, "box", Vector3(0.0, -0.55, 0.0), Vector3(400.0, 1.0, 400.0), _models.ground(Palette.scene_ground(level.theme)), false)
+	_grass.name = "Grass"
+	_floor = _models.shape_with(self, "box", Vector3.ZERO, Vector3.ONE, _models.ground(Palette.BOARD), false)
+	_floor.name = "Board floor"
+	# A wooden band spanning the full width separates the scene from the board, as the
+	# shelf does in the reference games; the shelf plank sits on top of it.
+	_band = _models.shape_with(self, "box", Vector3.ZERO, Vector3.ONE, _models.ground(Palette.SHELF_BAND), false)
+	_band.name = "Shelf band"
+	_band_shadow = _models.contact_shadow(self, Vector3.ZERO, Vector2.ONE, 0.22)
+	_scene = SceneView.new()
+	_scene.name = "Scene"
+	add_child(_scene)
+	_scene.setup(_models, level, routes, engine)
+	_zones = _scene.loading_zones()
 	_train = TrainView.new()
 	_train.name = "Train"
-	add_child(_train)
+	_scene.add_child(_train)
 	_train.setup(_models, routes, engine)
+	_shelf = ShelfView.new()
+	_shelf.name = "Shelf"
+	add_child(_shelf)
+	_shelf.setup(_models, _layout)
+	_board = BoardView.new()
+	_board.name = "Board"
+	add_child(_board)
+	_board.setup(_models, _layout, engine)
 	camera = CameraRig.new()
 	camera.name = "Camera"
 	add_child(camera)
-	camera.set_subject(_subject_points())
 	camera.make_current()
 	sync(engine)
 
 
-func _add_environment(clear_color: Color) -> void:
+func _add_environment() -> void:
 	var environment := Environment.new()
 	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = clear_color
+	environment.background_color = Palette.BOARD
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color("d4e2f2")
+	# Calibrated so a lit upward face renders at almost exactly its palette colour
+	# (ambient + sun * cos(sun angle) ~= 1.0): colours stay true and saturated, while
+	# side faces fall into soft shade that gives the pieces volume.
+	environment.ambient_light_color = Color("fff8f0")
 	environment.ambient_light_energy = 0.4
-	# Filmic tone mapping rolls highlights off softly and deepens shadows, which is
-	# most of the difference between "rendered" and "plastic" looking colour.
-	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	environment.tonemap_exposure = 0.92
-	environment.tonemap_white = 6.0
-	environment.adjustment_enabled = true
-	environment.adjustment_saturation = 1.15
-	environment.adjustment_contrast = 1.05
+	environment.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	var world_environment := WorldEnvironment.new()
 	world_environment.environment = environment
 	add_child(world_environment)
 	var sun := DirectionalLight3D.new()
 	sun.name = "Sun"
-	sun.light_color = Color("fff1dc")
-	sun.light_energy = 1.2
+	sun.light_color = Color("fff3e0")
+	sun.light_energy = 0.58
 	sun.shadow_enabled = true
-	sun.shadow_opacity = 0.62
-	sun.shadow_blur = 2.0
-	sun.shadow_bias = 0.03
-	sun.shadow_normal_bias = 1.2
-	sun.directional_shadow_max_distance = 80.0
+	sun.shadow_opacity = 0.42
+	sun.shadow_blur = 2.5
+	sun.directional_shadow_max_distance = 120.0
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
-	sun.rotation_degrees = Vector3(-52.0, -35.0, 0.0)
+	sun.rotation_degrees = Vector3(-62.0, 28.0, 0.0)
 	add_child(sun)
 
 
-## Key points that must always be on screen: rail ends and bends, station, yard corners.
-func _subject_points() -> PackedVector3Array:
-	var points := PackedVector3Array()
-	for route in _routes:
-		var step := maxi(1, route.points.size() / 24)
-		for i in range(0, route.points.size(), step):
-			points.append(route.points[i])
-			points.append(route.points[i] + Vector3.UP * 2.6)
-		points.append(route.points[route.points.size() - 1])
-	var yard := _layout.yard_rect()
-	for corner in [yard.position, Vector2(yard.end.x, yard.position.y), yard.end, Vector2(yard.position.x, yard.end.y)]:
-		points.append(Vector3(corner.x, 0.0, corner.y))
-		points.append(Vector3(corner.x, 2.4, corner.y))
-	for i in [0, StationView.BERTH_COUNT - 1]:
-		points.append(_layout.berth_position(i) + Vector3(0.0, 1.6, -1.3))
-	return points
-
-
-func frame(target: Rect2) -> void:
-	camera.frame(target)
+## Lays the three bands out inside `play_area` (viewport pixels).
+func frame(play_area: Rect2) -> void:
+	var scene_height := play_area.size.y * SCENE_SHARE
+	var scene_target := Rect2(play_area.position, Vector2(play_area.size.x, scene_height - BAND_GAP))
+	var board_target := Rect2(play_area.position + Vector2(0.0, scene_height), Vector2(play_area.size.x, play_area.size.y - scene_height))
+	var board := _layout.board_rect()
+	var shelf_top := _layout.shelf_centre_z() - WorldLayout.SHELF_DEPTH * 0.5 - 0.2
+	var half_width := maxf(board.size.x, _layout.shelf_width()) * 0.5 + 0.3
+	var region := Rect2(Vector2(-half_width, shelf_top), Vector2(half_width * 2.0, board.end.y + 0.4 - shelf_top))
+	var scene_transform := camera.frame(region, 1.2, board_target, _scene.bounds(), 1.4, scene_target)
+	_scene.transform = scene_transform
+	# The cream board floor starts just above the shelf; grass shows above it.
+	var floor_top := shelf_top - 0.6
+	_floor.scale = Vector3(400.0, 0.2, 200.0)
+	_floor.position = Vector3(0.0, -0.1, floor_top + 100.0)
+	var band_depth := WorldLayout.SHELF_DEPTH + 1.3
+	_band.scale = Vector3(400.0, 0.2, band_depth)
+	_band.position = Vector3(0.0, -0.05, _layout.shelf_centre_z())
+	_band_shadow.scale = Vector3(400.0, 1.0, 1.6)
+	_band_shadow.position = Vector3(0.0, 0.06, _layout.shelf_centre_z() + band_depth * 0.5 + 0.3)
 
 
 func sync(engine: PuzzleEngine) -> void:
 	_train.sync(engine)
-	_station.sync(engine)
-	_yard.refresh(engine)
+	_shelf.sync(engine)
+	_board.refresh(engine)
 	for lane in _zones.size():
 		_zones[lane].visible = engine.opened[lane] and engine.has_lane(lane)
 
 
 func set_visible_berths(count: int) -> void:
-	_station.set_visible_berths(count)
+	_shelf.set_visible_slots(count)
 
 
 func pick(screen_position: Vector2, engine: PuzzleEngine) -> int:
-	return _yard.pick(camera, screen_position, engine)
+	return _board.pick(camera, screen_position, engine)
 
 
 func collector_position(collector_id: int) -> Vector3:
-	return _yard.piece_position(collector_id)
+	return _board.piece_position(collector_id)
 
 
 func launch_collector(collector_id: int, slot_index: int, color_id: int) -> void:
-	_station.mark_arriving(slot_index)
-	_yard.launch(collector_id, color_id, _station.berth_position(slot_index), _station.arrived.bind(slot_index))
+	_shelf.mark_arriving(slot_index)
+	_board.launch(collector_id, color_id, _shelf.slot_position(slot_index), _shelf.arrived.bind(slot_index))
 
 
 func reject_collector(collector_id: int, blockers: PackedInt32Array) -> void:
-	_yard.nudge(collector_id)
-	_yard.flash(blockers)
+	_board.nudge(collector_id)
+	_board.flash(blockers)
 
 
 func play_match(event: MatchEvent) -> void:
-	_station.play_match(_train.wagon_position(event.lane, event.distance), event.slot, event.color)
+	_shelf.play_match(_train.wagon_position(event.lane, event.distance), event.slot, event.color)
 	_train.remove_wagon(event.wagon)
 
 
 func play_win() -> void:
 	var confetti := CPUParticles3D.new()
 	confetti.name = "Confetti"
-	confetti.amount = 160
+	confetti.amount = 180
 	confetti.lifetime = 2.4
 	confetti.one_shot = true
 	confetti.explosiveness = 0.9
 	confetti.direction = Vector3.UP
-	confetti.spread = 60.0
-	confetti.initial_velocity_min = 9.0
-	confetti.initial_velocity_max = 15.0
-	confetti.gravity = Vector3(0.0, -14.0, 0.0)
-	confetti.scale_amount_min = 0.18
-	confetti.scale_amount_max = 0.32
+	confetti.spread = 70.0
+	confetti.initial_velocity_min = 8.0
+	confetti.initial_velocity_max = 14.0
+	confetti.gravity = Vector3(0.0, -12.0, 0.0)
+	confetti.scale_amount_min = 0.16
+	confetti.scale_amount_max = 0.3
 	var piece := BoxMesh.new()
 	piece.size = Vector3(1.0, 0.15, 0.6)
 	var paper := StandardMaterial3D.new()
@@ -166,7 +167,7 @@ func play_win() -> void:
 	ramp.offsets = PackedFloat32Array([0.0, 0.25, 0.5, 0.75, 1.0])
 	ramp.colors = PackedColorArray(Palette.WAGONS)
 	confetti.color_initial_ramp = ramp
-	confetti.position = Vector3(0.0, 1.0, WorldLayout.STATION_Z)
+	confetti.position = Vector3(0.0, 1.0, _layout.shelf_centre_z())
 	add_child(confetti)
 	confetti.emitting = true
 
@@ -177,7 +178,7 @@ func play_loss() -> void:
 
 func _process(delta: float) -> void:
 	_zone_pulse += delta
-	var alpha := 0.38 + 0.22 * sin(_zone_pulse * 5.0)
+	var alpha := 0.35 + 0.25 * sin(_zone_pulse * 5.0)
 	for zone in _zones:
 		if zone.visible:
 			(zone.material_override as StandardMaterial3D).albedo_color.a = alpha

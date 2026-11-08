@@ -1,21 +1,23 @@
 class_name WorldLayout
 extends RefCounted
-## World-space placement of the station and the collector yard for one level.
+## World-space geometry of the board (collector grid) and the station shelf for one
+## level. Kept separate from the views so the camera fit, input picking and every view
+## agree on exactly the same positions.
 ##
-## Kept separate from the views so the camera fit, input picking and every view agree on
-## exactly the same geometry. The route (rails) lies at negative Z, the station at Z=0 and
-## the yard towards the camera at positive Z, so one continuous diorama is framed by a
-## single camera with the interactive yard nearest (largest) on screen.
+## The board lies on the ground plane around the origin, rows growing toward the camera
+## (+Z). The shelf runs across the screen just above the board (-Z side). The scene with
+## the train is a separate, independently scaled group placed above the shelf by
+## LevelWorld, so the board size never depends on how large a level's route is.
 
-const BERTH_SPACING := 2.6
-const STATION_Z := 0.6
-const YARD_TOP_Z := 5.7
-const CELL_X := 3.7
-const CELL_Z := 3.3
-const COLLECTOR_SCALE := 1.72
-const TOKEN_SCALE := 1.38
-## Height of the picking plane: the roof of a parked collector.
-const PICK_HEIGHT := 2.14
+const CELL := 2.8
+const PIECE_SCALE := 1.06
+const SLOT_SPACING := 1.85
+const SLOT_COUNT := 5
+const SHELF_DEPTH := 2.3
+const SHELF_GAP := 1.0
+const TOKEN_SCALE := 0.7
+## Height of the picking plane: the roof of a piece on the board.
+const PICK_HEIGHT := 0.98
 
 var rows: int
 var cols: int
@@ -27,11 +29,26 @@ func _init(level: LevelDefinition) -> void:
 
 
 func cell_position(row: int, col: int) -> Vector3:
-	return Vector3((col - (cols - 1) * 0.5) * CELL_X, 0.0, YARD_TOP_Z + row * CELL_Z)
+	return Vector3((col - (cols - 1) * 0.5) * CELL, 0.0, (row - (rows - 1) * 0.5) * CELL)
 
 
-func berth_position(index: int) -> Vector3:
-	return Vector3((index - 2) * BERTH_SPACING, 0.0, STATION_Z)
+## Board rectangle on the ground (XZ), including a margin for piece overhang.
+func board_rect() -> Rect2:
+	var half_width := cols * CELL * 0.5
+	var half_depth := rows * CELL * 0.5
+	return Rect2(Vector2(-half_width, -half_depth), Vector2(half_width * 2.0, half_depth * 2.0))
+
+
+func shelf_centre_z() -> float:
+	return board_rect().position.y - SHELF_GAP - SHELF_DEPTH * 0.5
+
+
+func shelf_width() -> float:
+	return SLOT_SPACING * SLOT_COUNT + 0.5
+
+
+func slot_position(index: int) -> Vector3:
+	return Vector3((index - (SLOT_COUNT - 1) * 0.5) * SLOT_SPACING, 0.0, shelf_centre_z() - 0.2)
 
 
 ## Unit vector a collector's arrow points to in world space.
@@ -40,21 +57,13 @@ static func arrow_direction(definition: CollectorDefinition) -> Vector3:
 	return Vector3.FORWARD if direction.length_squared() == 0.0 else direction.normalized()
 
 
-## Yard rectangle on the ground (XZ) including a margin for the paving border.
-func yard_rect() -> Rect2:
-	var half_width := cols * CELL_X * 0.5 + 0.6
-	var top := YARD_TOP_Z - CELL_Z * 0.5 - 0.5
-	var bottom := YARD_TOP_Z + (rows - 1) * CELL_Z + CELL_Z * 0.5 + 0.5
-	return Rect2(Vector2(-half_width, top), Vector2(half_width * 2.0, bottom - top))
-
-
 ## Cell (row, col) under a ground-plane point, or Vector2i(-1, -1) if outside.
 func cell_at(point: Vector3) -> Vector2i:
-	var col := roundi(point.x / CELL_X + (cols - 1) * 0.5)
-	var row := roundi((point.z - YARD_TOP_Z) / CELL_Z)
+	var col := roundi(point.x / CELL + (cols - 1) * 0.5)
+	var row := roundi(point.z / CELL + (rows - 1) * 0.5)
 	if row < 0 or row >= rows or col < 0 or col >= cols:
 		return Vector2i(-1, -1)
 	var centre := cell_position(row, col)
-	if absf(point.x - centre.x) > CELL_X * 0.5 or absf(point.z - centre.z) > CELL_Z * 0.5:
+	if absf(point.x - centre.x) > CELL * 0.5 or absf(point.z - centre.z) > CELL * 0.5:
 		return Vector2i(-1, -1)
 	return Vector2i(row, col)

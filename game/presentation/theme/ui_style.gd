@@ -76,6 +76,33 @@ static func card(fill: Color = Palette.PANEL, border: Color = Palette.PANEL_EDGE
 	return box
 
 
+## Round golden button face (pause/settings), with a lip that dips when pressed.
+static func round_gold(pressed: bool) -> StyleBoxFlat:
+	var box := button_box(Palette.GOLD, Palette.GOLD_DARK, pressed)
+	box.set_corner_radius_all(999)
+	box.border_color = Palette.GOLD_DARK
+	box.set_border_width_all(6)
+	box.border_width_bottom = 6 if pressed else 14
+	box.content_margin_left = 0
+	box.content_margin_right = 0
+	return box
+
+
+## Golden rounded frame around booster icons, with a cream inner face.
+static func gold_frame() -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = Palette.CREAM
+	box.border_color = Palette.GOLD
+	box.set_border_width_all(10)
+	box.border_width_bottom = 16
+	box.set_corner_radius_all(42)
+	box.shadow_color = Color(0.4, 0.22, 0.02, 0.3)
+	box.shadow_size = 8
+	box.shadow_offset = Vector2(0, 6)
+	box.anti_aliasing = true
+	return box
+
+
 ## Dark translucent pill for short status text drawn over the 3D scene.
 static func glass_pill() -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()

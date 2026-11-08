@@ -3,7 +3,7 @@ extends Control
 ## How close the train is to the final stop: a rounded track that fills from green to
 ## red, a little locomotive riding along it and a red flag at the end.
 
-const TRACK_HEIGHT := 30.0
+const TRACK_HEIGHT := 26.0
 const ENGINE_SIZE := Vector2(58.0, 40.0)
 
 var danger := 0.0:

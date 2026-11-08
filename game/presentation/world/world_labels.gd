@@ -5,7 +5,7 @@ extends RefCounted
 ## font, outline style and draw order.
 
 const FONT := preload("res://assets/fonts/Poppins-Bold.ttf")
-const PLATE_RADIUS := 0.36
+const PLATE_RADIUS := 0.31
 
 static var _arrow_meshes := {}
 static var _disc_meshes := {}
