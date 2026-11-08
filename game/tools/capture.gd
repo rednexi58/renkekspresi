@@ -13,6 +13,8 @@ var _solution: Array = []
 var _next_pick := 0
 var _clock := 0.0
 var _shot := 0
+var _unlock := 0
+var _unlocked := false
 
 
 func _initialize() -> void:
@@ -23,6 +25,8 @@ func _initialize() -> void:
 			_times = PackedFloat64Array()
 			for part in argument.get_slice("=", 1).split(","):
 				_times.append(float(part))
+		elif argument.begins_with("--unlock="):
+			_unlock = int(argument.get_slice("=", 1))
 		elif argument == "--play":
 			_play = true
 	_main = load("res://scenes/main.tscn").instantiate()
@@ -31,6 +35,12 @@ func _initialize() -> void:
 
 func _process(delta: float) -> bool:
 	_clock += delta
+	if _unlock > 0 and not _unlocked and _main.session != null and _main.session.is_active():
+		# Exercises the real offer flows (debug commerce grants instantly).
+		_unlocked = true
+		_main._offer_vip()
+		for i in _unlock:
+			_main._offer_reward_slot()
 	if _play and _main.session != null and _main.session.is_active():
 		if _solution.is_empty():
 			_solution = _load_solution(_main.level_index)

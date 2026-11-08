@@ -35,7 +35,7 @@ func run(campaign: Campaign, report: TestReport) -> void:
 
 func _replay(campaign: Campaign, test: Dictionary, report: TestReport) -> bool:
 	var level_id := int(test["level"])
-	var rules := PuzzleEngine.new(campaign.level_at(level_id - 1))
+	var rules := PuzzleEngine.new(campaign.level_at(level_id - 1), false, SlotPolicy.legacy())
 	rules.start()
 	var actions: Array = test["actions"]
 	var frames: Array = test["snapshots"]

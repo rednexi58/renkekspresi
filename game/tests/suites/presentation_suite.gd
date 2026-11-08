@@ -17,9 +17,9 @@ func run(campaign: Campaign, report: TestReport) -> void:
 		var world := LevelWorld.new()
 		tree.root.add_child(world)
 		world.build(level, routes, engine)
-		world.set_visible_berths(engine.slots.size())
 		world.frame(Rect2(Vector2(0, 330), Vector2(1080, 1320)))
 		_check_picking(world, engine, level.id, report)
+		_check_shelf_offers(world, engine, level.id, report)
 		var solution := _first_available(engine)
 		if solution >= 0:
 			report.check(engine.choose(solution) == PuzzleEngine.ChooseResult.OK, "L%d: available collector accepted" % level.id)
@@ -39,6 +39,23 @@ func _check_picking(world: LevelWorld, engine: PuzzleEngine, level_id: int, repo
 		var roof := world.collector_position(id) + Vector3.UP * WorldLayout.PICK_HEIGHT
 		var screen := world.camera.unproject_position(roof)
 		report.check(world.pick(screen, engine) == id, "L%d: tapping collector %d picks it" % [level_id, id])
+
+
+## Locked shelf positions show offers only when available, and tapping them is detected.
+func _check_shelf_offers(world: LevelWorld, engine: PuzzleEngine, level_id: int, report: TestReport) -> void:
+	world.set_offers(false, false)
+	world.sync(engine)
+	report.check(world.pick_shelf(_slot_screen(world, WorldLayout.VIP_POSITION))[1] == ShelfView.Look.HIDDEN, "L%d: no VIP button without a store" % level_id)
+	world.set_offers(true, true)
+	world.sync(engine)
+	report.check(world.pick_shelf(_slot_screen(world, WorldLayout.VIP_POSITION))[1] == ShelfView.Look.VIP_OFFER, "L%d: VIP button tappable" % level_id)
+	report.check(world.pick_shelf(_slot_screen(world, WorldLayout.FIRST_REWARD_POSITION + 2))[1] == ShelfView.Look.AD_OFFER, "L%d: ad button tappable" % level_id)
+	report.check(world.pick_shelf(_slot_screen(world, 0))[1] == ShelfView.Look.OPEN, "L%d: base slot open" % level_id)
+
+
+func _slot_screen(world: LevelWorld, position_index: int) -> Vector2:
+	var layout := WorldLayout.new(world.current_level)
+	return world.camera.unproject_position(world.to_global(layout.slot_position(position_index) + Vector3.UP * ShelfView.PICK_HEIGHT))
 
 
 static func _first_available(engine: PuzzleEngine) -> int:

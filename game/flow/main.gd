@@ -16,8 +16,12 @@ const BOOSTER_TOAST_KEYS := {
 	PuzzleEngine.BoosterResult.NO_STOCK: "TOAST_USED_UP",
 }
 
+const REWARDED_SLOT_PLACEMENT := "extra_slot"
+
 var campaign: Campaign
+var commerce: CommerceService
 var level_index := 0
+var _reward_guard := RewardGuard.new()
 var world: LevelWorld
 var session: LevelSession
 var hud: GameHud
@@ -31,6 +35,8 @@ func _ready() -> void:
 		push_error("Campaign could not be loaded")
 		return
 	TranslationServer.set_locale(LanguagePolicy.resolve("", OS.get_locale()))
+	commerce = _create_commerce()
+	commerce.entitlements_changed.connect(_on_entitlements_changed)
 	_ui_layer = CanvasLayer.new()
 	add_child(_ui_layer)
 	hud = GameHud.new()
@@ -41,6 +47,15 @@ func _ready() -> void:
 	_ui_layer.add_child(dialog)
 	get_viewport().size_changed.connect(_frame_camera)
 	start_level(_requested_level())
+
+
+## Development builds get an instant test provider so the VIP and rewarded-slot flows
+## can be played before StoreKit and the ad SDK are integrated; release exports never
+## do, and until real providers exist they see no paid or rewarded entry points at all.
+func _create_commerce() -> CommerceService:
+	if OS.is_debug_build():
+		return DebugCommerce.new()
+	return UnavailableCommerce.new()
 
 
 ## Optional `-- --level=N` command-line argument (development and screenshot tooling).
@@ -61,18 +76,20 @@ func start_level(index: int) -> void:
 	session = LevelSession.new()
 	session.name = "Session"
 	add_child(session)
-	session.begin(level, false)
+	session.begin(level, commerce.has_vip())
+	_reward_guard.cancel()
 	world = LevelWorld.new()
 	world.name = "World"
 	add_child(world)
 	world.build(level, RailRoute.load_level(level.id), session.engine)
-	world.set_visible_berths(session.engine.slots.size())
+	world.set_offers(commerce.can_purchase_vip(), commerce.can_show_rewarded())
 	session.collector_sent.connect(world.launch_collector)
 	session.choice_rejected.connect(_on_choice_rejected)
 	session.booster_refused.connect(_on_booster_refused)
 	session.matched.connect(world.play_match)
 	session.ticked.connect(_on_ticked)
 	session.finished.connect(_on_finished)
+	session.slots_changed.connect(_sync)
 	hud.show_level(level)
 	hud.refresh(session.engine, true)
 	_frame_camera.call_deferred()
@@ -90,8 +107,51 @@ func _unhandled_input(event: InputEvent) -> void:
 	# GUI buttons, so one code path serves phone and desktop without double taps.
 	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
 		return
+	var shelf: Array = world.pick_shelf(event.position)
+	match shelf[1]:
+		ShelfView.Look.VIP_OFFER:
+			_offer_vip()
+			return
+		ShelfView.Look.AD_OFFER:
+			_offer_reward_slot()
+			return
 	session.choose(world.pick(event.position, session.engine))
 	_sync()
+
+
+## VIP: one permanent extra slot in every level. The purchase result comes only from the
+## store; the slot opens only after a verified purchase.
+func _offer_vip() -> void:
+	session.paused = true
+	var token := _reward_guard.begin()
+	commerce.purchase_vip(func(ok: bool) -> void:
+		if _reward_guard.accept(token, ok) and commerce.has_vip():
+			session.unlock_vip_slot()
+		_resume_after_offer())
+
+
+## Rewarded ad: one more slot for this level, granted only if the ad was watched.
+func _offer_reward_slot() -> void:
+	if not session.engine.can_grant_reward_slot():
+		return
+	session.paused = true
+	var token := _reward_guard.begin()
+	commerce.show_rewarded(REWARDED_SLOT_PLACEMENT, func(earned: bool) -> void:
+		if _reward_guard.accept(token, earned):
+			session.unlock_reward_slot()
+		_resume_after_offer())
+
+
+func _resume_after_offer() -> void:
+	if session != null and session.engine.is_playing() and not dialog.visible:
+		session.paused = false
+	_sync()
+
+
+func _on_entitlements_changed() -> void:
+	if world != null:
+		world.set_offers(commerce.can_purchase_vip(), commerce.can_show_rewarded())
+		_sync()
 
 
 func _on_ticked() -> void:

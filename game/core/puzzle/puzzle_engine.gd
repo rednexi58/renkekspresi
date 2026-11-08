@@ -11,6 +11,7 @@ enum Status { READY, PLAYING, WON, LOST }
 enum ChooseResult { OK, NOT_PLAYING, LOCKED, BLOCKED, FULL }
 enum BoosterResult { OK, NOT_PLAYING, ACTIVE, EMPTY, NO_TARGET, NO_STOCK }
 enum Booster { FREEZE, BLAST, RECALL }
+enum SlotKind { BASE, VIP, REWARD }
 
 const GAP := 1.8
 const FIRST_GAP := 2.2
@@ -18,8 +19,6 @@ const POST_TEMPO := 2.75
 const START_DISTANCE := 0.8
 const RULE_STEP := 0.025
 const EPSILON := 0.000001
-const BASE_SLOTS := 3
-const MAX_SLOTS := 5
 const FREEZE_SECONDS := 5.0
 const SLOT_READY_DELAY := 0.26
 const SLOT_RETRY_DELAY := 0.045
@@ -29,9 +28,13 @@ const WAGON_CATCH_UP := 5.45
 const OPEN_THRESHOLD := 0.75
 
 var level: LevelDefinition
+var policy: SlotPolicy
 var yard: CollectorYard
 var wagons: Array[WagonState] = []
 var slots: Array[StationSlot] = []
+## Kind of each slot, parallel to `slots`, so the shelf can draw VIP and reward slots in
+## their fixed places whatever order they were unlocked in.
+var slot_kinds: Array[SlotKind] = []
 ## Collector ids in the order they were sent to the station (oldest first).
 var order: PackedInt32Array = PackedInt32Array()
 var heads: PackedFloat64Array = PackedFloat64Array()
@@ -54,15 +57,16 @@ var blocked_taps := 0
 var peak_slots := 0
 var total_wagons := 0
 var vip := false
-var reward_slot := false
+var reward_slots_granted := 0
 ## True once any booster was used; such wins are recorded separately from clean wins.
 var assisted := false
 ## Uses left for [FREEZE, BLAST, RECALL].
 var booster_stock: PackedInt32Array = PackedInt32Array([0, 0, 1])
 
 
-func _init(level_definition: LevelDefinition, has_vip: bool = false) -> void:
+func _init(level_definition: LevelDefinition, has_vip: bool = false, slot_policy: SlotPolicy = null) -> void:
 	level = level_definition
+	policy = slot_policy if slot_policy != null else SlotPolicy.standard()
 	var lanes := maxi(1, level.train_count)
 	heads.resize(lanes)
 	recoils.resize(lanes)
@@ -85,8 +89,8 @@ func _init(level_definition: LevelDefinition, has_vip: bool = false) -> void:
 		ranks[lane] += 1
 		wagons.append(WagonState.new(i, level.train[i], lane, distance))
 	total_wagons = wagons.size()
-	for i in BASE_SLOTS:
-		slots.append(StationSlot.new())
+	for i in policy.base_slots:
+		_add_slot(SlotKind.BASE)
 	if has_vip:
 		grant_vip()
 
@@ -226,23 +230,33 @@ func choose(collector_id: int) -> ChooseResult:
 	return ChooseResult.OK
 
 
-## Permanent extra slot from the VIP purchase. Returns false if already granted or full.
+func _add_slot(kind: SlotKind) -> void:
+	slots.append(StationSlot.new())
+	slot_kinds.append(kind)
+
+
+## Permanent extra slot from the VIP purchase. Returns false if already granted.
 func grant_vip() -> bool:
 	if vip:
 		return false
 	vip = true
-	if slots.size() < MAX_SLOTS:
-		slots.append(StationSlot.new())
+	if policy.vip_slots > 0 and slots.size() < policy.max_slots():
+		_add_slot(SlotKind.VIP)
 	return true
 
 
-## One extra slot for this level only (e.g. a rewarded unlock).
+## One more slot for this level only (a rewarded unlock). Returns false when every
+## reward slot is already open or the level is not being played.
 func grant_reward_slot() -> bool:
-	if status != Status.PLAYING or reward_slot or slots.size() >= MAX_SLOTS:
+	if status != Status.PLAYING or reward_slots_granted >= policy.reward_slots or slots.size() >= policy.max_slots():
 		return false
-	reward_slot = true
-	slots.append(StationSlot.new())
+	reward_slots_granted += 1
+	_add_slot(SlotKind.REWARD)
 	return true
+
+
+func can_grant_reward_slot() -> bool:
+	return status == Status.PLAYING and reward_slots_granted < policy.reward_slots and slots.size() < policy.max_slots()
 
 
 ## Refills an empty booster by one use. Refuses while uses remain.

@@ -8,6 +8,7 @@ const SCENE_SHARE := 0.36
 const BAND_GAP := 24.0
 
 var camera: CameraRig
+var current_level: LevelDefinition
 var _models := ModelLibrary.new()
 var _layout: WorldLayout
 var _scene: SceneView
@@ -20,9 +21,12 @@ var _floor: MeshInstance3D
 var _band: MeshInstance3D
 var _band_shadow: MeshInstance3D
 var _zone_pulse := 0.0
+var _vip_offer := false
+var _ad_offer := false
 
 
 func build(level: LevelDefinition, routes: Array[RailRoute], engine: PuzzleEngine) -> void:
+	current_level = level
 	_layout = WorldLayout.new(level)
 	_add_environment()
 	_grass = _models.shape_with(self, "box", Vector3(0.0, -0.55, 0.0), Vector3(400.0, 1.0, 400.0), _models.ground(Palette.scene_ground(level.theme)), false)
@@ -105,22 +109,30 @@ func frame(play_area: Rect2) -> void:
 	_band.position = Vector3(0.0, -0.05, _layout.shelf_centre_z())
 	_band_shadow.scale = Vector3(400.0, 1.0, 1.6)
 	_band_shadow.position = Vector3(0.0, 0.06, _layout.shelf_centre_z() + band_depth * 0.5 + 0.3)
+	_scene.clip_decoration(_layout.shelf_centre_z() - band_depth * 0.5)
+
+
+## Which unlock offers the shelf may show (from CommerceService availability).
+func set_offers(vip_offer: bool, ad_offer: bool) -> void:
+	_vip_offer = vip_offer
+	_ad_offer = ad_offer
 
 
 func sync(engine: PuzzleEngine) -> void:
 	_train.sync(engine)
-	_shelf.sync(engine)
+	_shelf.sync(engine, _vip_offer, _ad_offer)
 	_board.refresh(engine)
 	for lane in _zones.size():
 		_zones[lane].visible = engine.opened[lane] and engine.has_lane(lane)
 
 
-func set_visible_berths(count: int) -> void:
-	_shelf.set_visible_slots(count)
-
-
 func pick(screen_position: Vector2, engine: PuzzleEngine) -> int:
 	return _board.pick(camera, screen_position, engine)
+
+
+## Shelf position under a screen point as [index, ShelfView.Look].
+func pick_shelf(screen_position: Vector2) -> Array:
+	return _shelf.pick(camera, screen_position)
 
 
 func collector_position(collector_id: int) -> Vector3:

@@ -89,6 +89,21 @@ static func arrow_mesh(length: float, width: float) -> ArrayMesh:
 	return mesh
 
 
+## Flat "play" triangle pointing to +X (the rewarded-video symbol), lying in XZ.
+static func play_mesh(size: float) -> ArrayMesh:
+	var key := "play|%.3f" % size
+	if _arrow_meshes.has(key):
+		return _arrow_meshes[key]
+	var tool := SurfaceTool.new()
+	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	tool.set_normal(Vector3.UP)
+	for v in [Vector3(size * 0.6, 0.0, 0.0), Vector3(-size * 0.4, 0.0, size * 0.55), Vector3(-size * 0.4, 0.0, -size * 0.55)]:
+		tool.add_vertex(v)
+	var mesh := tool.commit()
+	_arrow_meshes[key] = mesh
+	return mesh
+
+
 static func _disc(radius: float) -> ArrayMesh:
 	var key := "%.3f" % radius
 	if _disc_meshes.has(key):

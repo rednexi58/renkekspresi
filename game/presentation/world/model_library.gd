@@ -259,6 +259,11 @@ func primitive(kind: String) -> Mesh:
 			mesh = cone
 		"prism":
 			mesh = PrismMesh.new()
+		"capsule":
+			var capsule := CapsuleMesh.new()
+			capsule.radius = 0.5
+			capsule.height = 1.0
+			mesh = capsule
 		_:
 			push_error("Unknown primitive: " + kind)
 			mesh = BoxMesh.new()

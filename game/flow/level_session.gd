@@ -11,6 +11,7 @@ signal booster_refused(kind: int, result: PuzzleEngine.BoosterResult)
 signal matched(event: MatchEvent)
 signal finished(won: bool)
 signal ticked
+signal slots_changed
 
 ## Longest frame the simulation accepts; a longer hitch (e.g. returning from background)
 ## is clamped so the train cannot jump past the loading zone in one frame.
@@ -26,6 +27,22 @@ func begin(level: LevelDefinition, has_vip: bool) -> void:
 	engine.start()
 	paused = false
 	_finished = false
+
+
+## Opens the permanent VIP slot for this level (the player owns VIP).
+func unlock_vip_slot() -> bool:
+	if engine == null or not engine.grant_vip():
+		return false
+	slots_changed.emit()
+	return true
+
+
+## Opens one more slot for this level after a rewarded ad was watched to the end.
+func unlock_reward_slot() -> bool:
+	if engine == null or not engine.grant_reward_slot():
+		return false
+	slots_changed.emit()
+	return true
 
 
 func is_active() -> bool:
