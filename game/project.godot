@@ -1,0 +1,25 @@
+; Renk Ekspresi / Color Express — Godot 4.5.1 project
+config_version=5
+
+[application]
+config/name="Renk Ekspresi"
+config/name_localized={
+"en": "Color Express",
+"tr": "Renk Ekspresi"
+}
+config/version="1.0.0"
+config/features=PackedStringArray("4.5", "Mobile")
+
+[display]
+window/size/viewport_width=1080
+window/size/viewport_height=1920
+window/size/window_width_override=450
+window/size/window_height_override=800
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=1
+
+[rendering]
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+textures/vram_compression/import_etc2_astc=true
