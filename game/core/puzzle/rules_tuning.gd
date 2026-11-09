@@ -27,6 +27,11 @@ var collect_before_open := true
 var approach_factor := 1.3
 ## Speed at which trailing wagons close the gap left by a collected one.
 var catch_up := 7.5
+## Extra closing speed per unit of gap (1/s). With three collectors working at once gaps
+## open several times faster than `catch_up` closes them, and the train used to tear
+## into a front piece and a far-behind rest; a speed that grows with the gap keeps the
+## train coupled (a gap halves about every 0.08 s) without snapping.
+var catch_up_gain := 9.0
 ## Scales the short delay before a collector takes its target wagon.
 var dispatch_factor := 0.8
 
@@ -43,5 +48,6 @@ static func legacy() -> RulesTuning:
 	tuning.collect_before_open = false
 	tuning.approach_factor = 1.0
 	tuning.catch_up = 5.45
+	tuning.catch_up_gain = 0.0
 	tuning.dispatch_factor = 1.0
 	return tuning

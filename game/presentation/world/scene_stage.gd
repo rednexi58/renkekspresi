@@ -111,7 +111,9 @@ func _add_environment(theme_id: int) -> void:
 	sun.shadow_blur = 2.0
 	sun.directional_shadow_max_distance = 90.0
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
-	sun.rotation_degrees = Vector3(-60.0, 30.0, 0.0)
+	# From the right and a little behind the camera: shadows fall to the left of things,
+	# where this camera can see them, and the sides facing the player stay lit.
+	sun.rotation_degrees = Vector3(-58.0, 62.0, 0.0)
 	_world.add_child(sun)
 
 

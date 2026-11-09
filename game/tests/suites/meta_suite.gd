@@ -10,6 +10,35 @@ func run(campaign: Campaign, report: TestReport) -> void:
 	_streak_and_combo(report)
 	_progress_fields(report)
 	_campaign_balance(campaign, report)
+	_train_stays_coupled(campaign, report)
+
+
+## While collectors empty the middle of a train, the wagons behind must close up quickly:
+## the hole left by collected wagons never grows beyond a couple of wagon lengths (it used
+## to reach eight, tearing the train into a front piece and a far-behind rest).
+func _train_stays_coupled(campaign: Campaign, report: TestReport) -> void:
+	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(Campaign.DEFAULT_PATH))
+	for index: int in [3, 10, 16, 40, 120]:
+		var level := campaign.level_at(index)
+		var solution: Array = data["levels"][index]["design"]["solution"]
+		var rules := PuzzleEngine.new(level)
+		rules.booster_stock = PackedInt32Array([0, 0, 0])
+		rules.start()
+		var next := 0
+		var worst := 0.0
+		while rules.is_playing() and rules.elapsed < SolutionPlayer.TIME_LIMIT:
+			if next < solution.size() and rules.occupied_slots() < rules.policy.base_slots:
+				if rules.choose(int(solution[next])) == PuzzleEngine.ChooseResult.OK:
+					next += 1
+			rules.tick(SolutionPlayer.STEP)
+			var ahead := {}
+			for wagon in rules.wagons:
+				if wagon.distance < 0.0:
+					continue
+				var front: float = ahead.get(wagon.lane, rules.heads[wagon.lane] - PuzzleEngine.FIRST_GAP + PuzzleEngine.GAP)
+				worst = maxf(worst, front - wagon.distance - PuzzleEngine.GAP)
+				ahead[wagon.lane] = wagon.distance
+		report.check(worst <= PuzzleEngine.GAP * 2.5, "L%d: holes in the train stay under 2.5 wagons (%.1f)" % [level.id, worst / PuzzleEngine.GAP])
 
 
 ## Several trains every third level from level 9 (two, then two or three after level 30), and every level stays winnable by its

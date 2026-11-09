@@ -1,18 +1,11 @@
 class_name SceneView
 extends Node3D
-## The upper scene: a soft dirt path with stitched edges winding over the grass, rails on
-## the path, a tunnel mound where the train enters, a little station at the final stop,
+## The upper scene: a railway (see TrackBuilder) winding over the grass, a tunnel mound
+## where the train enters, a little station at the final stop,
 ## and flowers, bushes and pebbles scattered around. Everything is built in the route's
 ## own coordinates; LevelWorld scales and places this node to fit the screen.
 ## Decoration is seeded per level and kept off the path.
 
-const PATH_HALF_WIDTH := 1.05
-const STITCH_SPACING := 0.42
-const STITCH_INSET := 0.82
-const RAIL_HALF_GAP := 0.28
-const RAIL_SIZE := Vector2(0.07, 0.07)
-const SLEEPER_SPACING := 0.42
-const SLEEPER_SIZE := Vector3(0.9, 0.05, 0.16)
 const DECORATION_ATTEMPTS := 70
 const PATH_CLEARANCE := 1.5
 const ZONE_COLOR := Color(1.0, 0.86, 0.3, 0.55)
@@ -68,17 +61,10 @@ func loading_zones() -> Array[MeshInstance3D]:
 
 
 func _build_lane(route: RailRoute, engine: PuzzleEngine) -> void:
-	var full := PathExtruder.sample(route, 0.0, route.length)
-	var path := PackedVector2Array([Vector2(-PATH_HALF_WIDTH, 0.0), Vector2(-PATH_HALF_WIDTH + 0.12, 0.05), Vector2(PATH_HALF_WIDTH - 0.12, 0.05), Vector2(PATH_HALF_WIDTH, 0.0)])
-	_add_mesh("Path", PathExtruder.extrude(full, path, 0.0), _models.ground(Palette.WINTER_PATH if _winter else Palette.PATH), false)
-	_add_stitches(route)
-	_add_sleepers(route)
-	for side in [-1.0, 1.0]:
-		var x: float = side * RAIL_HALF_GAP
-		var rail := PackedVector2Array([Vector2(x - RAIL_SIZE.x * 0.5, 0.0), Vector2(x - RAIL_SIZE.x * 0.5, RAIL_SIZE.y), Vector2(x + RAIL_SIZE.x * 0.5, RAIL_SIZE.y), Vector2(x + RAIL_SIZE.x * 0.5, 0.0)])
-		_add_mesh("Rail", PathExtruder.extrude(full, rail, 0.1), _models.material(Palette.RAIL, 0.5), false)
+	TrackBuilder.new(_models, _winter).build(self, route)
 	var zone_path := PathExtruder.sample(route, engine.loading_start, engine.loading_end)
-	var zone := _add_mesh("Loading zone", PathExtruder.extrude(zone_path, PackedVector2Array([Vector2(-0.82, 0.0), Vector2(0.82, 0.0)]), 0.075), _models.flat_material(ZONE_COLOR, true), false)
+	var half := TrackBuilder.BALLAST_HALF_WIDTH + 0.12
+	var zone := _add_mesh("Loading zone", PathExtruder.extrude(zone_path, PackedVector2Array([Vector2(-half, 0.0), Vector2(half, 0.0)]), TrackBuilder.BALLAST_TOP + 0.004), _models.flat_material(ZONE_COLOR, true), false)
 	zone.visible = false
 	_zones.append(zone)
 	_add_tunnel(route)
@@ -111,47 +97,6 @@ func _add_mesh(label: String, mesh: ArrayMesh, mat: Material, shadows: bool) -> 
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if shadows else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(instance)
 	return instance
-
-
-## Dashed "stitching" just inside both path edges, as on a quilted fabric path.
-func _add_stitches(route: RailRoute) -> void:
-	var count := int(route.length / STITCH_SPACING)
-	var multimesh := MultiMesh.new()
-	multimesh.transform_format = MultiMesh.TRANSFORM_3D
-	multimesh.mesh = _models.primitive("rounded_box")
-	multimesh.instance_count = count * 2
-	for i in count:
-		var distance := (i + 0.5) * STITCH_SPACING
-		var forward := route.direction_at(distance)
-		var side := forward.cross(Vector3.UP).normalized()
-		var basis := Basis.looking_at(forward, Vector3.UP).scaled(Vector3(0.07, 0.02, 0.22))
-		for k in 2:
-			var offset := side * STITCH_INSET * (1.0 if k == 0 else -1.0)
-			multimesh.set_instance_transform(i * 2 + k, Transform3D(basis, route.point_at(distance) + offset + Vector3.UP * 0.06))
-	var instance := MultiMeshInstance3D.new()
-	instance.name = "Stitches"
-	instance.multimesh = multimesh
-	instance.material_override = _models.material(Palette.WINTER_STITCH if _winter else Palette.PATH_STITCH, 0.9)
-	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(instance)
-
-
-func _add_sleepers(route: RailRoute) -> void:
-	var count := int(route.length / SLEEPER_SPACING)
-	var multimesh := MultiMesh.new()
-	multimesh.transform_format = MultiMesh.TRANSFORM_3D
-	multimesh.mesh = _models.primitive("rounded_box")
-	multimesh.instance_count = count
-	for i in count:
-		var distance := (i + 0.5) * SLEEPER_SPACING
-		var basis := Basis.looking_at(route.direction_at(distance), Vector3.UP).scaled(SLEEPER_SIZE)
-		multimesh.set_instance_transform(i, Transform3D(basis, route.point_at(distance) + Vector3.UP * 0.075))
-	var instance := MultiMeshInstance3D.new()
-	instance.name = "Sleepers"
-	instance.multimesh = multimesh
-	instance.material_override = _models.material(Palette.SLEEPER, 0.85)
-	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(instance)
 
 
 ## A grassy mound with a dark arch: the train emerges from it.

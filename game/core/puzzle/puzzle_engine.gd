@@ -440,7 +440,8 @@ func _advance_wagons(step: float, frozen: bool, before: PackedFloat64Array) -> v
 		ranks[wagon.lane] += 1
 		var carried := wagon.distance + heads[wagon.lane] - before[wagon.lane]
 		var target := heads[wagon.lane] - FIRST_GAP - rank * GAP
-		wagon.distance = _move_toward(carried, target, step * tuning.catch_up)
+		var closing := tuning.catch_up + tuning.catch_up_gain * absf(target - carried)
+		wagon.distance = _move_toward(carried, target, step * closing)
 
 
 static func _move_toward(from: float, to: float, max_delta: float) -> float:

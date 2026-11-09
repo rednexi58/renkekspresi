@@ -7,6 +7,12 @@ extends RefCounted
 ## Rule distances (PuzzleEngine) map onto this curve one-to-one.
 
 const ROUTES_PATH := "res://data/routes/route_%03d.json"
+## Corner rounding applied on load: each point becomes the average of its neighbours
+## within this many points, twice. Some authored routes turn by tens of degrees at a
+## single point; a train (and its sleepers) folding over such a kink looks broken, so
+## kinks are eased into short curves. Gentle curves are practically unchanged.
+const SMOOTH_RADIUS := 9
+const SMOOTH_PASSES := 2
 
 var points: PackedVector3Array = PackedVector3Array()
 var length: float = 0.0
@@ -26,7 +32,46 @@ static func load_level(level_id: int) -> Array[RailRoute]:
 		for p: Dictionary in entry["points"]:
 			route.points.append(Vector3(float(p["x"]), float(p["y"]), -float(p["z"])))
 		if route.points.size() >= 2 and route.length > 0.0:
+			route.points = _evenly_spaced(_smoothed(route.points))
 			result.append(route)
+	return result
+
+
+## Moving average over each point's neighbourhood; the two ends stay where they are (the
+## window shrinks towards them) so the tunnel and the final stop do not move.
+static func _smoothed(source: PackedVector3Array) -> PackedVector3Array:
+	var current := source
+	for pass_index in SMOOTH_PASSES:
+		var next := PackedVector3Array()
+		next.resize(current.size())
+		for i in current.size():
+			var reach := mini(SMOOTH_RADIUS, mini(i, current.size() - 1 - i))
+			var sum := Vector3.ZERO
+			for k in range(i - reach, i + reach + 1):
+				sum += current[k]
+			next[i] = sum / float(reach * 2 + 1)
+		current = next
+	return current
+
+
+## The same polyline with the same number of points at equal arc-length spacing, so a
+## rule distance still maps linearly onto it (point_at) after smoothing bunched points up.
+static func _evenly_spaced(source: PackedVector3Array) -> PackedVector3Array:
+	var cumulative := PackedFloat64Array([0.0])
+	for i in range(1, source.size()):
+		cumulative.append(cumulative[i - 1] + source[i - 1].distance_to(source[i]))
+	var total := cumulative[cumulative.size() - 1]
+	if total <= 0.0:
+		return source
+	var result := PackedVector3Array()
+	var segment := 0
+	for i in source.size():
+		var wanted := total * i / float(source.size() - 1)
+		while segment < source.size() - 2 and cumulative[segment + 1] < wanted:
+			segment += 1
+		var span := cumulative[segment + 1] - cumulative[segment]
+		var t := 0.0 if span <= 0.0 else clampf((wanted - cumulative[segment]) / span, 0.0, 1.0)
+		result.append(source[segment].lerp(source[segment + 1], t))
 	return result
 
 
