@@ -47,6 +47,13 @@ const SCENE_GROUNDS: Array[Color] = [
 	Color("c3e597"), Color("f4dfb2"), Color("d7ea9c"), Color("cfe5b6"), Color("f6d2a6"), Color("e8f2fb"),
 ]
 const PATH := Color("efd2a4")
+## Winter variants: packed-snow path, icy board and shelf band, snowy mound, warm lamps.
+const WINTER_PATH := Color("dfe7f0")
+const WINTER_STITCH := Color("a9b8c9")
+const WINTER_BOARD := Color("eef4fa")
+const WINTER_SHELF_BAND := Color("d8e4f0")
+const SNOW := Color("f7fbff")
+const LAMP_GLOW := Color("ffd27a")
 const PATH_STITCH := Color("c99f6e")
 
 ## Rolling stock parts shared by every wagon and the locomotive.

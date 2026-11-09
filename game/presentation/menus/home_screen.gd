@@ -7,27 +7,18 @@ extends Control
 signal play_pressed
 signal menu_pressed(menu: String)
 
-const HERO := preload("res://assets/branding/app_icon_1024.png")
 
 var _coins: Label
 var _play: Button
 var _daily_dot: Panel
 var _status: Label
+var _hero: TrainPreview
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	theme = UiStyle.theme()
-	var background := ColorRect.new()
-	background.color = Palette.BOARD
-	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(background)
-	var grass := ColorRect.new()
-	grass.color = Palette.scene_ground(0)
-	grass.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	grass.custom_minimum_size = Vector2(0, 820)
-	grass.size = Vector2(get_viewport_rect().size.x, 820)
-	add_child(grass)
+	_add_winter_backdrop()
 	var column := VBoxContainer.new()
 	column.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	column.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -37,15 +28,8 @@ func _ready() -> void:
 	column.add_child(title)
 	var hero_box := CenterContainer.new()
 	column.add_child(hero_box)
-	var hero := TextureRect.new()
-	hero.texture = HERO
-	hero.custom_minimum_size = Vector2(560, 560)
-	hero.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	hero.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	var frame := PanelContainer.new()
-	frame.add_theme_stylebox_override("panel", UiStyle.gold_frame())
-	frame.add_child(hero)
-	hero_box.add_child(frame)
+	_hero = TrainPreview.new(Vector2(900, 620), true)
+	hero_box.add_child(_hero)
 	var play_box := CenterContainer.new()
 	column.add_child(play_box)
 	_play = Button.new()
@@ -109,9 +93,46 @@ func _ready() -> void:
 	top.add_child(settings)
 
 
+## Winter sky fading into snow, with flakes drifting over the whole screen.
+func _add_winter_backdrop() -> void:
+	var gradient := Gradient.new()
+	gradient.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
+	gradient.colors = PackedColorArray([Color("9fc9ee"), Color("dcecf9"), Color("f7fbff")])
+	var texture := GradientTexture2D.new()
+	texture.gradient = gradient
+	texture.fill_from = Vector2(0.5, 0.0)
+	texture.fill_to = Vector2(0.5, 1.0)
+	texture.width = 8
+	texture.height = 256
+	var sky := TextureRect.new()
+	sky.texture = texture
+	sky.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	sky.stretch_mode = TextureRect.STRETCH_SCALE
+	sky.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	sky.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(sky)
+	var snow := CPUParticles2D.new()
+	snow.amount = 70
+	snow.lifetime = 9.0
+	snow.preprocess = 9.0
+	snow.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	snow.emission_rect_extents = Vector2(700, 10)
+	snow.position = Vector2(540, -20)
+	snow.direction = Vector2(0.15, 1.0)
+	snow.spread = 10.0
+	snow.gravity = Vector2.ZERO
+	snow.initial_velocity_min = 110.0
+	snow.initial_velocity_max = 190.0
+	snow.scale_amount_min = 5.0
+	snow.scale_amount_max = 11.0
+	snow.color = Color(1.0, 1.0, 1.0, 0.85)
+	add_child(snow)
+
+
 func refresh(progress: PlayerProgress, daily_available: bool) -> void:
 	_coins.text = "● %d" % progress.coins
 	_play.text = tr("PLAY_LEVEL") % (progress.current_level + 1)
+	_hero.show_skin(progress.skin_selected)
 	var city := WorldTour.city(progress.current_level, TranslationServer.get_locale().substr(0, 2))
 	_status.text = tr("HOME_STATUS") % [city, progress.win_streak, progress.chest_stars, StarChest.STARS_TO_OPEN]
 	_daily_dot.visible = daily_available

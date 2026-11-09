@@ -25,19 +25,22 @@ var _models: ModelLibrary
 var _routes: Array[RailRoute] = []
 var _zones: Array[MeshInstance3D] = []
 var _rng := RandomNumberGenerator.new()
+var _winter := false
 ## All decoration lives under one node so it can be clipped against the shelf band.
 var _decor := Node3D.new()
 
 
-func setup(models: ModelLibrary, level: LevelDefinition, routes: Array[RailRoute], engine: PuzzleEngine) -> void:
+## `theme_id` is the scenery to show (Season.theme_for), not necessarily the level's own.
+func setup(models: ModelLibrary, level: LevelDefinition, routes: Array[RailRoute], engine: PuzzleEngine, theme_id: int) -> void:
 	_models = models
 	_routes = routes
 	_rng.seed = level.map_seed
+	_winter = theme_id == Season.SNOW_THEME
 	_decor.name = "Decoration"
 	add_child(_decor)
 	for lane in routes.size():
 		_build_lane(routes[lane], engine)
-	_decorate(level.theme)
+	_decorate(theme_id)
 
 
 ## Ground rectangle of the scene in local coordinates (route plus a margin).
@@ -67,7 +70,7 @@ func loading_zones() -> Array[MeshInstance3D]:
 func _build_lane(route: RailRoute, engine: PuzzleEngine) -> void:
 	var full := PathExtruder.sample(route, 0.0, route.length)
 	var path := PackedVector2Array([Vector2(-PATH_HALF_WIDTH, 0.0), Vector2(-PATH_HALF_WIDTH + 0.12, 0.05), Vector2(PATH_HALF_WIDTH - 0.12, 0.05), Vector2(PATH_HALF_WIDTH, 0.0)])
-	_add_mesh("Path", PathExtruder.extrude(full, path, 0.0), _models.ground(Palette.PATH), false)
+	_add_mesh("Path", PathExtruder.extrude(full, path, 0.0), _models.ground(Palette.WINTER_PATH if _winter else Palette.PATH), false)
 	_add_stitches(route)
 	_add_sleepers(route)
 	for side in [-1.0, 1.0]:
@@ -80,6 +83,24 @@ func _build_lane(route: RailRoute, engine: PuzzleEngine) -> void:
 	_zones.append(zone)
 	_add_tunnel(route)
 	_add_station_booth(route)
+	if _winter:
+		_add_lamps(route)
+
+
+## Winter evenings: little lamp posts with warm glowing bulbs along the track.
+func _add_lamps(route: RailRoute) -> void:
+	var spacing := 6.5
+	var count := int(route.length / spacing)
+	for i in count:
+		var distance := (i + 0.6) * spacing
+		var side := route.direction_at(distance).cross(Vector3.UP).normalized() * (1.6 if i % 2 == 0 else -1.6)
+		var at := route.point_at(distance) + side
+		if _near_path_within(at, 1.2):
+			continue
+		_models.shape(_decor, "cylinder", at + Vector3(0.0, 0.55, 0.0), Vector3(0.07, 1.1, 0.07), Color("39404d"))
+		_models.shape(_decor, "rounded_box", at + Vector3(0.0, 1.16, 0.0), Vector3(0.24, 0.12, 0.24), Color("39404d"))
+		_models.shape(_decor, "sphere", at + Vector3(0.0, 1.02, 0.0), Vector3.ONE * 0.2, Palette.LAMP_GLOW, false)
+		_taken.append(at)
 
 
 func _add_mesh(label: String, mesh: ArrayMesh, mat: Material, shadows: bool) -> MeshInstance3D:
@@ -110,7 +131,7 @@ func _add_stitches(route: RailRoute) -> void:
 	var instance := MultiMeshInstance3D.new()
 	instance.name = "Stitches"
 	instance.multimesh = multimesh
-	instance.material_override = _models.material(Palette.PATH_STITCH, 0.9)
+	instance.material_override = _models.material(Palette.WINTER_STITCH if _winter else Palette.PATH_STITCH, 0.9)
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(instance)
 
@@ -139,7 +160,7 @@ func _add_tunnel(route: RailRoute) -> void:
 	tunnel.name = "Tunnel"
 	tunnel.transform = Transform3D(Basis.looking_at(route.direction_at(0.4), Vector3.UP), route.point_at(0.0))
 	add_child(tunnel)
-	_models.shape(tunnel, "sphere", Vector3(0.0, 0.0, 0.9), Vector3(3.0, 2.2, 2.6), MOUND)
+	_models.shape(tunnel, "sphere", Vector3(0.0, 0.0, 0.9), Vector3(3.0, 2.2, 2.6), Palette.SNOW if _winter else MOUND)
 	_models.shape(tunnel, "sphere", Vector3(0.0, 0.25, -0.15), Vector3(1.25, 1.3, 0.5), TUNNEL, false)
 	_models.shape(tunnel, "sphere", Vector3(0.0, 0.3, -0.12), Vector3(1.5, 1.55, 0.36), Palette.ROCK, false)
 	_models.shape(tunnel, "sphere", Vector3(0.0, 0.25, -0.2), Vector3(1.2, 1.25, 0.4), TUNNEL, false)
@@ -200,7 +221,14 @@ func _decorate(theme_id: int) -> void:
 		if point.y < 0.0:
 			continue
 		var roll := _rng.randf()
-		if roll < 0.45:
+		if _winter:
+			if roll < 0.55:
+				_snow_drift(point)
+			elif roll < 0.85:
+				_bush(point, theme_id)
+			else:
+				_pebbles(point)
+		elif roll < 0.45:
 			_flower(point)
 		elif roll < 0.8:
 			_bush(point, theme_id)
@@ -431,12 +459,22 @@ func _flower(point: Vector3) -> void:
 	_models.shape(_decor, "sphere", point + Vector3(0.0, 0.28 * size, 0.0), Vector3.ONE * 0.1 * size, Palette.FLOWER_CENTRE, false)
 
 
+## Soft heaps of snow in place of flowers in winter.
+func _snow_drift(point: Vector3) -> void:
+	for k in _rng.randi_range(1, 3):
+		var offset := Vector3(_rng.randf_range(-0.35, 0.35), 0.0, _rng.randf_range(-0.35, 0.35))
+		var size := _rng.randf_range(0.45, 0.85)
+		_models.shape(_decor, "low_sphere", point + offset, Vector3(size * 1.4, size * 0.45, size), Palette.SNOW, false)
+
+
 func _bush(point: Vector3, theme_id: int) -> void:
 	var green := Palette.BUSH.lerp(Palette.scene_ground(theme_id), 0.15)
 	for k in 3:
 		var offset := Vector3(_rng.randf_range(-0.3, 0.3), 0.0, _rng.randf_range(-0.3, 0.3))
 		var size := _rng.randf_range(0.6, 0.9)
 		_models.shape(_decor, "sphere", point + offset + Vector3(0.0, size * 0.32, 0.0), Vector3(size, size * 0.8, size), green.lightened(_rng.randf_range(-0.05, 0.1)))
+		if _winter:
+			_models.shape(_decor, "sphere", point + offset + Vector3(0.0, size * 0.62, 0.0), Vector3(size * 0.8, size * 0.32, size * 0.8), Palette.SNOW, false)
 	_models.contact_shadow(_decor, point + Vector3(0.0, 0.01, 0.0), Vector2(1.3, 1.2), 0.25)
 
 

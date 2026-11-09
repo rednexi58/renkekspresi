@@ -27,13 +27,14 @@ func setup(models: ModelLibrary, level: LevelDefinition, routes: Array[RailRoute
 	add_child(_viewport)
 	_world = Node3D.new()
 	_viewport.add_child(_world)
-	_add_environment(level.theme)
-	var ground := models.shape_with(_world, "box", Vector3(0.0, -0.55, 0.0), Vector3(400.0, 1.0, 400.0), models.ground(Palette.scene_ground(level.theme)), false)
+	var theme_id := Season.theme_for(level)
+	_add_environment(theme_id)
+	var ground := models.shape_with(_world, "box", Vector3(0.0, -0.55, 0.0), Vector3(400.0, 1.0, 400.0), models.ground(Palette.scene_ground(theme_id)), false)
 	ground.name = "Ground"
 	_scene = SceneView.new()
 	_scene.name = "Scene"
 	_world.add_child(_scene)
-	_scene.setup(models, level, routes, engine)
+	_scene.setup(models, level, routes, engine, theme_id)
 	_train = TrainView.new()
 	_train.name = "Train"
 	_scene.add_child(_train)
@@ -42,6 +43,40 @@ func setup(models: ModelLibrary, level: LevelDefinition, routes: Array[RailRoute
 	_world.add_child(_camera)
 	_camera.make_current()
 	_camera.set_bounds(_track_bounds(routes))
+	if Season.is_winter(level.id - 1):
+		_add_snowfall(_track_bounds(routes).grow(6.0))
+
+
+## Gentle snowfall over the whole map in winter levels: small white flakes drifting down
+## and sideways, unshaded so they read as light against any ground.
+func _add_snowfall(area: Rect2) -> void:
+	var snow := CPUParticles3D.new()
+	snow.name = "Snowfall"
+	snow.amount = 260
+	snow.lifetime = 7.0
+	snow.preprocess = 7.0
+	snow.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	snow.emission_box_extents = Vector3(area.size.x * 0.5, 0.5, area.size.y * 0.5)
+	snow.position = Vector3(area.get_center().x, 9.0, area.get_center().y)
+	snow.direction = Vector3(0.3, -1.0, 0.1)
+	snow.spread = 12.0
+	snow.gravity = Vector3.ZERO
+	snow.initial_velocity_min = 1.0
+	snow.initial_velocity_max = 1.8
+	snow.scale_amount_min = 0.08
+	snow.scale_amount_max = 0.17
+	var flake := SphereMesh.new()
+	flake.radius = 1.0
+	flake.height = 2.0
+	flake.radial_segments = 6
+	flake.rings = 3
+	var white := StandardMaterial3D.new()
+	white.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	white.albedo_color = Color(1.0, 1.0, 1.0, 0.9)
+	white.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	flake.material = white
+	snow.mesh = flake
+	_world.add_child(snow)
 
 
 ## Ground area of every track, the part of the map the player must see.

@@ -3,7 +3,13 @@ extends Node
 ## Music and sound effects. Respects the player's settings, ducks nothing and never
 ## stops other apps' audio (the iOS audio session stays "ambient" by default in Godot).
 
-const MUSIC := preload("res://assets/audio/calm_journey.ogg")
+## Background loops by season (original compositions, see tools/compose_music.py).
+const MUSIC := {
+	Season.Kind.WINTER: preload("res://assets/audio/winter_lights.ogg"),
+	Season.Kind.SUMMER: preload("res://assets/audio/summer_breeze.ogg"),
+}
+const MUSIC_DB := -15.0
+const FADE_SECONDS := 1.2
 const SOUNDS := {
 	"tap": preload("res://assets/audio/tap.wav"),
 	"match": preload("res://assets/audio/match.wav"),
@@ -18,15 +24,14 @@ var _music: AudioStreamPlayer
 var _voices: Array[AudioStreamPlayer] = []
 var _next := 0
 var _sound_on := true
+var _music_on := true
+var _season: Season.Kind = Season.Kind.WINTER
 
 
 func _ready() -> void:
 	_music = AudioStreamPlayer.new()
-	var stream := MUSIC.duplicate() as AudioStream
-	if stream is AudioStreamOggVorbis:
-		(stream as AudioStreamOggVorbis).loop = true
-	_music.stream = stream
-	_music.volume_db = -14.0
+	_music.stream = _looping(MUSIC[_season])
+	_music.volume_db = MUSIC_DB
 	add_child(_music)
 	for i in VOICES:
 		var voice := AudioStreamPlayer.new()
@@ -35,8 +40,32 @@ func _ready() -> void:
 		_voices.append(voice)
 
 
+static func _looping(source: AudioStream) -> AudioStream:
+	var stream := source.duplicate() as AudioStream
+	if stream is AudioStreamOggVorbis:
+		(stream as AudioStreamOggVorbis).loop = true
+	return stream
+
+
+## Switches to the season's loop with a short fade (no-op if it is already playing).
+func set_season(season: Season.Kind) -> void:
+	if season == _season:
+		return
+	_season = season
+	if not _music_on or not _music.playing:
+		_music.stream = _looping(MUSIC[season])
+		return
+	var fade := create_tween()
+	fade.tween_property(_music, "volume_db", -40.0, FADE_SECONDS * 0.5)
+	fade.tween_callback(func() -> void:
+		_music.stream = _looping(MUSIC[_season])
+		_music.play())
+	fade.tween_property(_music, "volume_db", MUSIC_DB, FADE_SECONDS * 0.5)
+
+
 func apply_settings(music_on: bool, sound_on: bool) -> void:
 	_sound_on = sound_on
+	_music_on = music_on
 	if music_on and not _music.playing:
 		_music.play()
 	elif not music_on and _music.playing:

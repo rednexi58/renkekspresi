@@ -29,10 +29,11 @@ var _ad_offer := false
 func build(level: LevelDefinition, routes: Array[RailRoute], engine: PuzzleEngine, skin_id: String = "classic") -> void:
 	current_level = level
 	_layout = WorldLayout.new(level)
-	_add_environment()
-	_floor = _models.shape_with(self, "box", Vector3(0.0, -0.1, 0.0), Vector3(400.0, 0.2, 400.0), _models.ground(Palette.BOARD), false)
+	var winter := Season.is_winter(level.id - 1)
+	_add_environment(winter)
+	_floor = _models.shape_with(self, "box", Vector3(0.0, -0.1, 0.0), Vector3(400.0, 0.2, 400.0), _models.ground(Palette.WINTER_BOARD if winter else Palette.BOARD), false)
 	_floor.name = "Board floor"
-	_band = _models.shape_with(self, "box", Vector3.ZERO, Vector3.ONE, _models.ground(Palette.SHELF_BAND), false)
+	_band = _models.shape_with(self, "box", Vector3.ZERO, Vector3.ONE, _models.ground(Palette.WINTER_SHELF_BAND if winter else Palette.SHELF_BAND), false)
 	_band.name = "Shelf band"
 	_shelf = ShelfView.new()
 	_shelf.name = "Shelf"
@@ -61,10 +62,10 @@ func build(level: LevelDefinition, routes: Array[RailRoute], engine: PuzzleEngin
 	sync(engine)
 
 
-func _add_environment() -> void:
+func _add_environment(winter: bool) -> void:
 	var environment := Environment.new()
 	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Palette.BOARD
+	environment.background_color = Palette.WINTER_BOARD if winter else Palette.BOARD
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	environment.ambient_light_color = Color("fff8f0")
 	environment.ambient_light_energy = 0.4

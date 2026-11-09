@@ -109,6 +109,7 @@ func show_home() -> void:
 	_teardown_level()
 	hud.visible = false
 	home.visible = true
+	context.audio.set_season(Season.Kind.WINTER)
 	_refresh_home()
 
 
@@ -149,6 +150,7 @@ func start_level(index: int) -> void:
 	session.slots_changed.connect(_sync)
 	_combo.reset()
 	_peak_danger = 0.0
+	context.audio.set_season(Season.of(level_index))
 	var hard := LevelTags.is_hard(context.campaign, level_index)
 	hud.show_level(level, WorldTour.city(level_index, context.language()), hard)
 	_grant_starting_boosters()
