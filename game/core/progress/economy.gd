@@ -14,9 +14,11 @@ const PIGGY_PER_WIN := 30
 const PIGGY_CAPACITY := 1500
 const PIGGY_MIN_TO_BREAK := 300
 const DAILY_REWARDS := [50, 75, 100, 150, 200, 250, 500]
-## First level index after which interstitials may appear, and how many wins apart.
-const INTERSTITIAL_FROM_LEVEL := 8
-const INTERSTITIAL_EVERY_WINS := 3
+## Interstitials: one every INTERSTITIAL_EVERY_WINS wins, from level INTERSTITIAL_FROM_LEVEL+1.
+## The first five levels stay ad-free because that is where most players decide whether to
+## keep the game; an ad there costs more players than it earns.
+const INTERSTITIAL_FROM_LEVEL := 5
+const INTERSTITIAL_EVERY_WINS := 2
 
 
 static func win_coins(assisted: bool) -> int:

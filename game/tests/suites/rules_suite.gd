@@ -90,7 +90,7 @@ func _economy_and_progress(report: TestReport) -> void:
 	report.check(Economy.win_coins(false) == 30 and Economy.win_coins(true) == 20, "Clean wins earn a bonus")
 	report.check(Economy.piggy_after_win(Economy.PIGGY_CAPACITY - 5) == Economy.PIGGY_CAPACITY, "Piggy bank is capped")
 	report.check(Economy.daily_reward(1) == 50 and Economy.daily_reward(7) == 500 and Economy.daily_reward(8) == 50, "Daily rewards cycle weekly")
-	report.check(not Economy.interstitial_due(3, 5, false) and Economy.interstitial_due(10, 3, false) and not Economy.interstitial_due(10, 3, true), "Interstitial pacing and no-ads")
+	report.check(not Economy.interstitial_due(3, 5, false) and not Economy.interstitial_due(10, 1, false) and Economy.interstitial_due(10, 2, false) and not Economy.interstitial_due(10, 2, true), "Interstitial every 2 wins after level 5, never with No Ads")
 	var progress := PlayerProgress.new()
 	progress.record_win(0, 42)
 	progress.record_win(0, 50)
