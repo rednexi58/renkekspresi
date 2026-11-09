@@ -12,13 +12,15 @@ func run(campaign: Campaign, report: TestReport) -> void:
 	_campaign_balance(campaign, report)
 
 
-## Multi-train levels are a treat every fifth level, and every level stays winnable by its
+## Several trains every third level from level 9 (two, then two or three after level 30), and every level stays winnable by its
 ## authored solution under the shipped rule tuning with only the always-open slots.
 func _campaign_balance(campaign: Campaign, report: TestReport) -> void:
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(Campaign.DEFAULT_PATH))
 	for i in campaign.count():
 		var level := campaign.level_at(i)
-		report.check(level.train_count == 1 or level.id % 5 == 0, "L%d: several trains only every fifth level" % level.id)
+		var multi_slot := level.id >= 9 and level.id % 3 == 0
+		report.check((level.train_count > 1) == multi_slot, "L%d: several trains exactly every third level from 9" % level.id)
+		report.check(level.train_count <= (2 if level.id <= 30 else 3), "L%d: two trains up to 30, at most three after" % level.id)
 		var result := SolutionPlayer.play(level, data["levels"][i]["design"]["solution"], RulesTuning.standard())
 		report.check(result.won, "L%d: authored solution wins with standard tuning" % level.id)
 		report.check(result.peak_danger < 0.99, "L%d: solution keeps a safety margin" % level.id)
@@ -51,7 +53,7 @@ func _level_tags(campaign: Campaign, report: TestReport) -> void:
 			hard += 1
 			report.check(i >= 9, "No hard level before 10")
 	report.check(intros >= 3, "Campaign introduces at least three mechanics (%d)" % intros)
-	report.check(hard >= 10 and hard <= 20, "Hard levels are occasional (%d)" % hard)
+	report.check(hard >= campaign.count() / 10 and hard <= campaign.count() / 5, "Hard levels are occasional (%d)" % hard)
 	report.check(LevelTags.intro(campaign, 0) == LevelTags.Intro.NONE, "Level 1 has the tutorial, not an intro")
 
 

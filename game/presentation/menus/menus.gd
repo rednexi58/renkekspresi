@@ -109,7 +109,7 @@ func _shop() -> void:
 	if commerce.can_purchase(ProductCatalog.PIGGY):
 		content.add_child(MenuCard.row(_t("SHOP_PIGGY"), piggy_text, commerce.price(ProductCatalog.PIGGY), _buy.bind(ProductCatalog.PIGGY), Color("ff9ec4"), piggy_ready))
 	if commerce.can_purchase(ProductCatalog.COINS_SMALL) or commerce.owns(ProductCatalog.VIP):
-		content.add_child(MenuCard.row(_t("RESTORE"), "", _t("RESTORE"), _restore, Palette.INK_SOFT))
+		content.add_child(MenuCard.row(_t("RESTORE_TITLE"), _t("RESTORE_DESC"), _t("RESTORE_BTN"), _restore, Palette.INK_SOFT))
 
 
 func _product_row(content: VBoxContainer, product_id: String, title: String, description: String, tone: Color, owned: bool = false) -> void:
@@ -248,7 +248,7 @@ func _settings() -> void:
 	var current := TranslationServer.get_locale().substr(0, 2)
 	content.add_child(MenuCard.row(_t("SETTINGS_LANGUAGE"), "Türkçe / English", "EN" if current == "tr" else "TR", _switch_language, Palette.BUTTON_BLUE))
 	if _context.commerce.can_purchase(ProductCatalog.COINS_SMALL) or _context.commerce.owns(ProductCatalog.VIP):
-		content.add_child(MenuCard.row(_t("RESTORE"), "", _t("RESTORE"), _restore, Palette.INK_SOFT))
+		content.add_child(MenuCard.row(_t("RESTORE_TITLE"), _t("RESTORE_DESC"), _t("RESTORE_BTN"), _restore, Palette.INK_SOFT))
 	content.add_child(MenuCard.row(_t("PRIVACY"), "", "↗", func() -> void: OS.shell_open(GameContext.PRIVACY_URL), Palette.INK_SOFT))
 	content.add_child(MenuCard.row(_t("SUPPORT"), "", "↗", func() -> void: OS.shell_open(GameContext.SUPPORT_URL), Palette.INK_SOFT))
 	content.add_child(UiStyle.body(_t("VERSION_N") % ProjectSettings.get_setting("application/config/version", "1.0"), 28))

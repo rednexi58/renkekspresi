@@ -135,7 +135,7 @@ func _language_policy(report: TestReport) -> void:
 
 
 func _campaign_integrity(campaign: Campaign, report: TestReport) -> void:
-	report.check(campaign.count() == 100, "Campaign has 100 levels")
+	report.check(campaign.count() == PlayerProgress.LEVEL_COUNT, "Campaign has %d levels" % PlayerProgress.LEVEL_COUNT)
 	for i in campaign.count():
 		var level := campaign.levels[i]
 		report.check(level.id == i + 1, "Level ids are sequential at %d" % i)

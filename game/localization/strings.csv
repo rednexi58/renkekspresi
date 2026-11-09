@@ -134,3 +134,16 @@ LEG_EAST_ASIA,East & Southeast Asia,Doğu ve Güneydoğu Asya
 LEG_OCEANIA,Pacific & Oceania,Pasifik ve Okyanusya
 LEG_AMERICAS_SOUTH,South America,Güney Amerika
 LEG_AMERICAS_NORTH,North America,Kuzey Amerika
+RESTORE_TITLE,Already purchased?,Daha önce satın aldın mı?
+RESTORE_DESC,"Get back VIP, No Ads and packs on this device.","VIP, Reklamsız ve paketleri bu cihaza geri getir."
+RESTORE_BTN,Restore,Geri yükle
+LEG_MEDITERRANEAN,Mediterranean Coast,Akdeniz Kıyıları
+LEG_ALPS_RHINE,Alps & Rhine,Alpler ve Ren
+LEG_BALTIC_NORDIC,Baltic & Nordic,Baltık ve İskandinavya
+LEG_BALKANS_BLACK_SEA,Balkans & Black Sea,Balkanlar ve Karadeniz
+LEG_SAHARA_SAVANNA,Sahara & Savanna,Sahra ve Savan
+LEG_SILK_ROAD,The Silk Road,İpek Yolu
+LEG_HIMALAYA_BAY,Himalayas & Bengal,Himalayalar ve Bengal
+LEG_ISLANDS_ASIA,Asian Islands & Rivers,Asya Adaları ve Nehirleri
+LEG_JAPAN_PACIFIC,Japan & the Pacific,Japonya ve Pasifik
+LEG_AMERICAS_GRAND,The Grand American Line,Büyük Amerika Hattı

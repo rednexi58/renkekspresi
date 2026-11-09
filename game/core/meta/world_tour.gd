@@ -1,7 +1,7 @@
 class_name WorldTour
 extends RefCounted
-## The campaign as a journey around the world: ten legs of ten stops, one city per
-## level. Pure data, so the level map, the HUD and the win screen all name the same
+## The campaign as a journey around the world, twice: twenty legs of ten stops, one city
+## per level. Pure data, so the level map, the HUD and the win screen all name the same
 ## place, and a future campaign extension only appends stops here.
 
 const STOPS_PER_LEG := 10
@@ -57,6 +57,56 @@ const LEGS := [
 		["San Francisco", "United States", "ABD"], ["Vancouver", "Canada", "Kanada"], ["Denver", "United States", "ABD"],
 		["Chicago", "United States", "ABD"], ["Toronto", "Canada", "Kanada"], ["Montreal", "Canada", "Kanada"],
 		["New York", "United States", "ABD"]]],
+	["LEG_MEDITERRANEAN", [
+		["Antalya", "Türkiye", "Türkiye"], ["İzmir", "Türkiye", "Türkiye"], ["Thessaloniki", "Greece", "Yunanistan"],
+		["Naples", "Italy", "İtalya"], ["Palermo", "Italy", "İtalya"], ["Valletta", "Malta", "Malta"],
+		["Marseille", "France", "Fransa"], ["Nice", "France", "Fransa"], ["Valencia", "Spain", "İspanya"],
+		["Seville", "Spain", "İspanya"]]],
+	["LEG_ALPS_RHINE", [
+		["Porto", "Portugal", "Portekiz"], ["Bordeaux", "France", "Fransa"], ["Geneva", "Switzerland", "İsviçre"],
+		["Milan", "Italy", "İtalya"], ["Innsbruck", "Austria", "Avusturya"], ["Munich", "Germany", "Almanya"],
+		["Salzburg", "Austria", "Avusturya"], ["Cologne", "Germany", "Almanya"], ["Luxembourg", "Luxembourg", "Lüksemburg"],
+		["Hamburg", "Germany", "Almanya"]]],
+	["LEG_BALTIC_NORDIC", [
+		["Dublin", "Ireland", "İrlanda"], ["Cardiff", "United Kingdom", "Birleşik Krallık"], ["Bergen", "Norway", "Norveç"],
+		["Gothenburg", "Sweden", "İsveç"], ["Tallinn", "Estonia", "Estonya"], ["Riga", "Latvia", "Letonya"],
+		["Gdańsk", "Poland", "Polonya"], ["Tromsø", "Norway", "Norveç"], ["Rovaniemi", "Finland", "Finlandiya"],
+		["Tórshavn", "Faroe Islands", "Faroe Adaları"]]],
+	["LEG_BALKANS_BLACK_SEA", [
+		["Ljubljana", "Slovenia", "Slovenya"], ["Zagreb", "Croatia", "Hırvatistan"], ["Sarajevo", "Bosnia and Herzegovina", "Bosna-Hersek"],
+		["Podgorica", "Montenegro", "Karadağ"], ["Tirana", "Albania", "Arnavutluk"], ["Skopje", "North Macedonia", "Kuzey Makedonya"],
+		["Varna", "Bulgaria", "Bulgaristan"], ["Constanța", "Romania", "Romanya"], ["Chișinău", "Moldova", "Moldova"],
+		["Trabzon", "Türkiye", "Türkiye"]]],
+	["LEG_SAHARA_SAVANNA", [
+		["Casablanca", "Morocco", "Fas"], ["Fez", "Morocco", "Fas"], ["Algiers", "Algeria", "Cezayir"],
+		["Luxor", "Egypt", "Mısır"], ["Khartoum", "Sudan", "Sudan"], ["Addis Ababa", "Ethiopia", "Etiyopya"],
+		["Kampala", "Uganda", "Uganda"], ["Kigali", "Rwanda", "Ruanda"], ["Lusaka", "Zambia", "Zambiya"],
+		["Windhoek", "Namibia", "Namibya"]]],
+	["LEG_SILK_ROAD", [
+		["Ankara", "Türkiye", "Türkiye"], ["Kars", "Türkiye", "Türkiye"], ["Tehran", "Iran", "İran"],
+		["Isfahan", "Iran", "İran"], ["Ashgabat", "Turkmenistan", "Türkmenistan"], ["Bukhara", "Uzbekistan", "Özbekistan"],
+		["Tashkent", "Uzbekistan", "Özbekistan"], ["Bishkek", "Kyrgyzstan", "Kırgızistan"], ["Astana", "Kazakhstan", "Kazakistan"],
+		["Ulaanbaatar", "Mongolia", "Moğolistan"]]],
+	["LEG_HIMALAYA_BAY", [
+		["Lahore", "Pakistan", "Pakistan"], ["Amritsar", "India", "Hindistan"], ["Agra", "India", "Hindistan"],
+		["Varanasi", "India", "Hindistan"], ["Kolkata", "India", "Hindistan"], ["Thimphu", "Bhutan", "Bhutan"],
+		["Chennai", "India", "Hindistan"], ["Bengaluru", "India", "Hindistan"], ["Kochi", "India", "Hindistan"],
+		["Chiang Mai", "Thailand", "Tayland"]]],
+	["LEG_ISLANDS_ASIA", [
+		["Phnom Penh", "Cambodia", "Kamboçya"], ["Vientiane", "Laos", "Laos"], ["Ho Chi Minh City", "Vietnam", "Vietnam"],
+		["Bali", "Indonesia", "Endonezya"], ["Cebu", "Philippines", "Filipinler"], ["Macau", "China", "Çin"],
+		["Guangzhou", "China", "Çin"], ["Chengdu", "China", "Çin"], ["Xi'an", "China", "Çin"],
+		["Busan", "South Korea", "Güney Kore"]]],
+	["LEG_JAPAN_PACIFIC", [
+		["Osaka", "Japan", "Japonya"], ["Sapporo", "Japan", "Japonya"], ["Okinawa", "Japan", "Japonya"],
+		["Guam", "United States", "ABD"], ["Port Moresby", "Papua New Guinea", "Papua Yeni Gine"], ["Cairns", "Australia", "Avustralya"],
+		["Adelaide", "Australia", "Avustralya"], ["Hobart", "Australia", "Avustralya"], ["Queenstown", "New Zealand", "Yeni Zelanda"],
+		["Honolulu", "United States", "ABD"]]],
+	["LEG_AMERICAS_GRAND", [
+		["Anchorage", "United States", "ABD"], ["Seattle", "United States", "ABD"], ["Calgary", "Canada", "Kanada"],
+		["Las Vegas", "United States", "ABD"], ["Austin", "United States", "ABD"], ["New Orleans", "United States", "ABD"],
+		["Miami", "United States", "ABD"], ["Washington", "United States", "ABD"], ["Boston", "United States", "ABD"],
+		["Quebec City", "Canada", "Kanada"]]],
 ]
 
 

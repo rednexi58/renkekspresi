@@ -5,7 +5,7 @@ extends RefCounted
 ## damaged save never crashes the game; the schema version allows future migrations.
 
 const SCHEMA_VERSION := 1
-const LEVEL_COUNT := 100
+const LEVEL_COUNT := 200
 
 var unlocked := 1
 var current_level := 0

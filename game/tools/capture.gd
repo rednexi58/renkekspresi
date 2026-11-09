@@ -16,6 +16,7 @@ var _shot := 0
 var _unlock := 0
 var _unlocked := false
 var _menu := ""
+var _lang := ""
 
 
 func _initialize() -> void:
@@ -28,6 +29,8 @@ func _initialize() -> void:
 				_times.append(float(part))
 		elif argument.begins_with("--unlock="):
 			_unlock = int(argument.get_slice("=", 1))
+		elif argument.begins_with("--lang="):
+			_lang = argument.get_slice("=", 1)
 		elif argument.begins_with("--menu="):
 			_menu = argument.get_slice("=", 1)
 		elif argument == "--play":
@@ -52,6 +55,9 @@ func _process(delta: float) -> bool:
 		if _next_pick < _solution.size() and _main.session.engine.occupied_slots() < _main.session.engine.slots.size():
 			_main.session.choose(int(_solution[_next_pick]))
 			_next_pick += 1
+	if not _lang.is_empty() and _clock > 0.1:
+		TranslationServer.set_locale(_lang)
+		_lang = ""
 	if not _menu.is_empty() and _clock > 0.3:
 		_main._open_menu(_menu)
 		_menu = ""

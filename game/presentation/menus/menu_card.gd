@@ -79,7 +79,9 @@ func close_card() -> void:
 	closed.emit()
 
 
-## A rounded row with a title, description and an action button on the right.
+## A rounded row with a title, description and an action button on the right. Texts wrap
+## instead of widening the row: in longer languages (Turkish) a one-line title used to
+## push the whole card off screen.
 static func row(title: String, description: String, action_text: String, action: Callable, tone: Color = Palette.BUTTON_GREEN, enabled: bool = true) -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel", UiStyle.card(Palette.CREAM, Palette.PANEL_EDGE))
@@ -92,18 +94,23 @@ static func row(title: String, description: String, action_text: String, action:
 	line.add_child(texts)
 	var heading := UiStyle.heading(title, 42, Palette.INK, Color(0, 0, 0, 0))
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	heading.custom_minimum_size = Vector2(1, 0)
 	texts.add_child(heading)
 	if not description.is_empty():
 		var body := UiStyle.body(description, 28)
 		body.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-		body.custom_minimum_size = Vector2(480, 0)
+		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		body.custom_minimum_size = Vector2(1, 0)
 		texts.add_child(body)
 	var button := Button.new()
 	button.text = action_text
-	button.custom_minimum_size = Vector2(250, 110)
+	button.custom_minimum_size = Vector2(300, 110)
+	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	button.focus_mode = Control.FOCUS_NONE
 	button.disabled = not enabled
-	button.add_theme_font_size_override("font_size", 34)
+	button.add_theme_font_size_override("font_size", 32)
 	UiStyle.tint_button(button, tone, tone.darkened(0.3))
 	button.pressed.connect(action)
 	button.visible = not action_text.is_empty()
