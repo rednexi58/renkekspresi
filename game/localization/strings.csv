@@ -19,7 +19,7 @@ TOAST_USED_UP,This booster is used up for this level.,Bu yardımcı bu bölüm i
 WIN_TITLE,Journey saved!,Yolculuk kurtarıldı!
 WIN_BODY,Time %s · %d moves,Süre %s · %d hamle
 LOSE_TITLE,Out of track!,Ray bitti!
-LOSE_BODY,The train reached the final stop. Plan for the colors coming next.,Tren son durağa ulaştı. Sıradaki renklere yer ayırarak dene.
+LOSE_BODY,The train reached the final stop three times. Plan for the colors coming next.,Tren son durağa üç kez ulaştı. Sıradaki renklere yer ayırarak dene.
 BTN_NEXT,Next level,Sonraki bölüm
 BTN_RETRY,Try again,Tekrar dene
 BTN_RESUME,Resume,Devam et
@@ -49,11 +49,11 @@ SUPPORT,Support,Destek
 VERSION_N,Version %s,Sürüm %s
 SHOP_TITLE,Shop,Mağaza
 SHOP_STARTER,Starter Pack,Başlangıç Paketi
-SHOP_STARTER_DESC,"1,500 coins + VIP slot + Golden Express locomotive","1.500 coin + VIP yuvası + Altın Ekspres lokomotif"
-SHOP_VIP,VIP Slot,VIP Yuvası
-SHOP_VIP_DESC,One extra station slot in every level forever,Her bölümde kalıcı 1 ekstra istasyon yuvası
+SHOP_STARTER_DESC,"1,500 coins + Golden Express locomotive + 3 of each booster",1.500 coin + Altın Ekspres lokomotif + her güçlendiriciden 3
+SHOP_VIP,VIP Membership,VIP Üyelik
+SHOP_VIP_DESC,"Extra station slot in every level + no ads. Monthly, renews automatically.","Her bölümde ekstra istasyon yuvası + reklamsız. Aylık, otomatik yenilenir."
 SHOP_NOADS,Remove Ads,Reklamları Kaldır
-SHOP_NOADS_DESC,"No ads between levels + 2,000 coins. Optional reward videos stay available.","Bölüm arası reklam yok + 2.000 coin. İsteğe bağlı ödüllü videolar kalır."
+SHOP_NOADS_DESC,"No ads between levels + 2,000 coins. Optional reward videos stay available.",Bölüm arası reklam yok + 2.000 coin. İsteğe bağlı ödüllü videolar kalır.
 SHOP_COINS_N,%s coins,%s coin
 SHOP_PIGGY,Piggy Bank,Kumbara
 SHOP_PIGGY_DESC,%d coins saved from your wins,Galibiyetlerinden biriken %d coin
@@ -79,48 +79,48 @@ CLAIM,Claim,Al
 COME_BACK,Come back tomorrow for the next gift!,Sonraki hediye için yarın gel!
 WIN_COINS,+%d coins,+%d coin
 BTN_DOUBLE,Watch ad · x2,Reklam izle · x2
-BTN_CONTINUE_COINS,Continue · %d coins,Devam et · %d coin
-BTN_CONTINUE_AD,Watch ad · continue,Reklam izle · devam et
+BTN_CONTINUE_COINS,+1 chance · %d coins,+1 hak · %d coin
+BTN_CONTINUE_AD,Watch ad · +1 chance,Reklam izle · +1 hak
 NOT_ENOUGH_COINS,Not enough coins.,Yeterli coin yok.
 BOOSTER_OUT_TITLE,%s used up,%s tükendi
 BOOSTER_OUT_BODY,Get one more use for this level.,Bu bölüm için 1 hak daha al.
 BTN_BUY_COINS,Buy · %d coins,Satın al · %d coin
 BTN_WATCH_AD,Watch ad · +1,Reklam izle · +1
-TUTORIAL_1,"Tap a wagon whose arrow path is clear. It goes to the station and collects wagons of its colour from the train.","Oku açık olan bir vagona dokun. İstasyona gider ve trendeki kendi rengindeki vagonları toplar."
+TUTORIAL_1,Tap a wagon whose arrow path is clear. It goes to the station and collects wagons of its colour from the train.,Oku açık olan bir vagona dokun. İstasyona gider ve trendeki kendi rengindeki vagonları toplar.
 TUTORIAL_2,Collect every wagon before the train reaches the end of the track!,Tren rayın sonuna varmadan bütün vagonları topla!
 LEVELS_TITLE,World Tour,Dünya Turu
 APP_TITLE,Color Express,Renk Ekspresi
-STREAK_BOOSTERS,"Win streak %d: free boosters!","%d galibiyet serisi: bedava güçlendirici!"
+STREAK_BOOSTERS,Win streak %d: free boosters!,%d galibiyet serisi: bedava güçlendirici!
 INTRO_TITLE,New on this line!,Bu hatta yeni!
-INTRO_MORE_COLORS,"A new colour joins the trains. Watch the incoming wagons and keep a slot free for it.","Trenlere yeni bir renk katılıyor. Gelen vagonları izle, ona bir yuva boş bırak."
-INTRO_TWO_TRAINS,"Two trains at once! Each runs on its own track, but they share your shelf.","Aynı anda iki tren! Her biri kendi hattında gider ama rafını paylaşırlar."
-INTRO_THREE_TRAINS,"Three trains now. Plan the shelf for the colours that arrive first.","Artık üç tren var. Rafı önce gelecek renklere göre planla."
-INTRO_FOUR_TRAINS,"Four trains: the grand junction! Use boosters wisely.","Dört tren: büyük kavşak! Güçlendiricileri akıllıca kullan."
+INTRO_MORE_COLORS,A new colour joins the trains. Watch the incoming wagons and keep a slot free for it.,"Trenlere yeni bir renk katılıyor. Gelen vagonları izle, ona bir yuva boş bırak."
+INTRO_TWO_TRAINS,"Two trains at once! Each runs on its own track, but they share your shelf.",Aynı anda iki tren! Her biri kendi hattında gider ama rafını paylaşırlar.
+INTRO_THREE_TRAINS,Three trains now. Plan the shelf for the colours that arrive first.,Artık üç tren var. Rafı önce gelecek renklere göre planla.
+INTRO_FOUR_TRAINS,Four trains: the grand junction! Use boosters wisely.,Dört tren: büyük kavşak! Güçlendiricileri akıllıca kullan.
 INTRO_BIG_YARD,"A bigger yard: more collectors, more blocked paths. Open the way first.","Daha büyük bir saha: daha çok toplayıcı, daha çok kapalı yol. Önce yolu aç."
 HARD_TITLE,Hard level!,Zor bölüm!
-HARD_BODY,"This one is tough, but the reward is x%d coins.","Bu bölüm zorlu ama ödülü x%d altın."
+HARD_BODY,"This one is tough, but the reward is x%d coins.",Bu bölüm zorlu ama ödülü x%d altın.
 HARD_BADGE,HARD,ZOR
 BTN_GO,Let's go,Başla
 COMBO_N,Combo x%d!,Kombo x%d!
-STREAK_WARNING,"You will lose your %d-win streak!","%d galibiyet serini kaybedeceksin!"
+STREAK_WARNING,You will lose your %d-win streak!,%d galibiyet serini kaybedeceksin!
 WIN_TITLE_CITY,Arrived: %s!,Varış: %s!
 WIN_TIME,Time %s %s,Süre %s %s
 NEW_RECORD,· New record!,· Yeni rekor!
-WIN_COMBO,"Best combo x%d: +%d ●","En iyi kombo x%d: +%d ●"
-WIN_NEAR_MISS,"Near miss bonus: +%d ●","Kıl payı bonusu: +%d ●"
-WIN_HARD,"Hard level bonus: +%d ●","Zor bölüm bonusu: +%d ●"
-CHEST_OPENED,"Star chest opened! +%d ● and 1 of each booster","Yıldız sandığı açıldı! +%d ● ve her güçlendiriciden 1"
+WIN_COMBO,Best combo x%d: +%d ●,En iyi kombo x%d: +%d ●
+WIN_NEAR_MISS,Near miss bonus: +%d ●,Kıl payı bonusu: +%d ●
+WIN_HARD,Hard level bonus: +%d ●,Zor bölüm bonusu: +%d ●
+CHEST_OPENED,Star chest opened! +%d ● and 1 of each booster,Yıldız sandığı açıldı! +%d ● ve her güçlendiriciden 1
 CHEST_PROGRESS,Star chest: %d/%d ★,Yıldız sandığı: %d/%d ★
 STREAK_NOW,Win streak: %d,Galibiyet serisi: %d
 NEAR_MISS,Near miss!,Kıl payı!
 MENU_RECORDS,Records,Rekorlar
-HOME_STATUS,"Next: %s  ·  Streak %d  ·  Chest %d/%d ★","Sıradaki: %s  ·  Seri %d  ·  Sandık %d/%d ★"
+HOME_STATUS,Next: %s  ·  Streak %d  ·  Chest %d/%d ★,Sıradaki: %s  ·  Seri %d  ·  Sandık %d/%d ★
 PLAY,Play,Oyna
 RECORDS_TITLE,Records,Rekorlar
 RECORD_FURTHEST,Furthest stop,En uzak durak
 RECORD_FURTHEST_DESC,Level %d · %s,Bölüm %d · %s
 RECORD_STARS,Stars collected,Toplanan yıldız
-RECORDS_OFFLINE,"Sign in to Game Center to compare with players worldwide.","Dünyadaki oyuncularla karşılaştırmak için Game Center'a giriş yap."
+RECORDS_OFFLINE,Sign in to Game Center to compare with players worldwide.,Dünyadaki oyuncularla karşılaştırmak için Game Center'a giriş yap.
 RANKING,Ranking,Sıralama
 BEST_TIME,Best time %s,En iyi süre %s
 TAP_TO_PREVIEW,Tap to preview,Önizlemek için dokun
@@ -135,7 +135,7 @@ LEG_OCEANIA,Pacific & Oceania,Pasifik ve Okyanusya
 LEG_AMERICAS_SOUTH,South America,Güney Amerika
 LEG_AMERICAS_NORTH,North America,Kuzey Amerika
 RESTORE_TITLE,Already purchased?,Daha önce satın aldın mı?
-RESTORE_DESC,"Get back VIP, No Ads and packs on this device.","VIP, Reklamsız ve paketleri bu cihaza geri getir."
+RESTORE_DESC,"Get back VIP, No Ads and the Starter Pack on this device.","VIP, Reklamsız ve Başlangıç Paketini bu cihaza geri getir."
 RESTORE_BTN,Restore,Geri yükle
 LEG_MEDITERRANEAN,Mediterranean Coast,Akdeniz Kıyıları
 LEG_ALPS_RHINE,Alps & Rhine,Alpler ve Ren
@@ -147,3 +147,22 @@ LEG_HIMALAYA_BAY,Himalayas & Bengal,Himalayalar ve Bengal
 LEG_ISLANDS_ASIA,Asian Islands & Rivers,Asya Adaları ve Nehirleri
 LEG_JAPAN_PACIFIC,Japan & the Pacific,Japonya ve Pasifik
 LEG_AMERICAS_GRAND,The Grand American Line,Büyük Amerika Hattı
+CHANCE_LOST,Close call! %d chances left,Kıl payı! %d hakkın kaldı
+VIP_TITLE,VIP Membership,VIP Üyelik
+VIP_BENEFITS,"• One extra station slot in every level, always open
+• No ads between levels
+• Optional reward videos stay available","• Her bölümde her zaman açık 1 ekstra istasyon yuvası
+• Bölüm aralarında reklam yok
+• İsteğe bağlı ödüllü videolar kullanılabilir kalır"
+VIP_SUBSCRIBE,Monthly VIP,Aylık VIP
+VIP_PER_MONTH,%s / month,%s / ay
+VIP_SUBSCRIBE_BTN,Subscribe,Abone ol
+VIP_TERMS,VIP is an auto-renewable monthly subscription at %s per month. Payment is charged to your Apple Account when you confirm. It renews automatically at the same price unless cancelled at least 24 hours before the end of the current period. You can manage or cancel it anytime in your App Store account settings.,"VIP, aylık %s olan otomatik yenilenen bir aboneliktir. Ödeme, onayladığında Apple Hesabından alınır. Mevcut dönem bitmeden en az 24 saat önce iptal edilmezse aynı fiyattan otomatik yenilenir. Aboneliğini istediğin zaman App Store hesap ayarlarından yönetebilir veya iptal edebilirsin."
+VIP_ACTIVE,VIP is active,VIP aktif
+VIP_ACTIVE_UNTIL,Current period ends %s,Mevcut dönem bitişi: %s
+VIP_MANAGE,Manage,Yönet
+VIP_MANAGE_TITLE,Manage subscription,Aboneliği yönet
+VIP_WELCOME,Welcome to VIP! Your extra slot is open.,VIP'e hoş geldin! Ekstra yuvan açıldı.
+STORE_UNAVAILABLE,The App Store is not reachable right now. Try again later.,App Store'a şu an ulaşılamıyor. Daha sonra tekrar dene.
+TERMS_OF_USE,Terms of Use,Kullanım Koşulları
+AD_PRIVACY,Ad privacy choices,Reklam gizlilik tercihleri

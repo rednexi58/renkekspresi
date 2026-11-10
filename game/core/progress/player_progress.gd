@@ -6,6 +6,7 @@ extends RefCounted
 
 const SCHEMA_VERSION := 1
 const LEVEL_COUNT := 200
+const DELIVERED_MEMORY := 64
 
 var unlocked := 1
 var current_level := 0
@@ -23,10 +24,14 @@ var daily_streak := 0
 var skins_owned := PackedStringArray(["classic"])
 var skin_selected := "classic"
 ## Mirrors of store entitlements so the game starts correctly offline; the store
-## remains the source of truth and restores them on launch.
-var owns_vip := false
+## remains the source of truth and refreshes them on launch and on resume.
+## `vip_until` is the end of the current VIP subscription period (Unix seconds).
+var vip_until := 0
 var owns_no_ads := false
 var owns_starter := false
+## StoreKit transaction ids already fulfilled, so a transaction reported again (e.g. by
+## the next launch) is never granted twice. Only the newest DELIVERED_MEMORY are kept.
+var delivered_transactions := PackedStringArray()
 ## Best stars (0-3) per level, stars waiting in the star chest, the current win streak,
 ## boosters banked for the next level, and the levels whose mechanic intro was shown.
 var stars := PackedByteArray()
@@ -85,6 +90,28 @@ func take_booster_bank() -> PackedInt32Array:
 	return taken
 
 
+## VIP is active while the subscription period has not ended.
+func has_vip(now: int) -> bool:
+	return vip_until > now
+
+
+## No interstitials for No Ads owners and active VIP members.
+func is_ad_free(now: int) -> bool:
+	return owns_no_ads or has_vip(now)
+
+
+## Records a fulfilled transaction; false if it was already fulfilled.
+func mark_delivered(transaction_id: String) -> bool:
+	if transaction_id.is_empty():
+		return true
+	if delivered_transactions.has(transaction_id):
+		return false
+	delivered_transactions.append(transaction_id)
+	while delivered_transactions.size() > DELIVERED_MEMORY:
+		delivered_transactions.remove_at(0)
+	return true
+
+
 func add_coins(amount: int) -> void:
 	coins = maxi(0, coins + amount)
 
@@ -119,7 +146,8 @@ func to_dict() -> Dictionary:
 		"daily_streak": daily_streak,
 		"skins_owned": Array(skins_owned),
 		"skin_selected": skin_selected,
-		"owns_vip": owns_vip,
+		"vip_until": vip_until,
+		"delivered_transactions": Array(delivered_transactions),
 		"owns_no_ads": owns_no_ads,
 		"owns_starter": owns_starter,
 		"stars": Array(stars),
@@ -157,7 +185,11 @@ static func from_dict(data: Dictionary) -> PlayerProgress:
 		progress.skins_owned.append("classic")
 	var selected := str(data.get("skin_selected", "classic"))
 	progress.skin_selected = selected if progress.skins_owned.has(selected) else "classic"
-	progress.owns_vip = bool(data.get("owns_vip", false))
+	progress.vip_until = maxi(0, int(data.get("vip_until", 0)))
+	var delivered: Variant = data.get("delivered_transactions", [])
+	if delivered is Array:
+		for id: Variant in delivered:
+			progress.delivered_transactions.append(str(id))
 	progress.owns_no_ads = bool(data.get("owns_no_ads", false))
 	progress.owns_starter = bool(data.get("owns_starter", false))
 	var saved_stars: Variant = data.get("stars", [])

@@ -12,6 +12,8 @@ signal matched(event: MatchEvent)
 signal finished(won: bool)
 signal ticked
 signal slots_changed
+## The train reached the final stop and a chance was used; `left` chances remain.
+signal chance_lost(left: int)
 
 ## Longest frame the simulation accepts; a longer hitch (e.g. returning from background)
 ## is clamped so the train cannot jump past the loading zone in one frame.
@@ -89,8 +91,11 @@ func use_booster(kind: int) -> void:
 func _process(delta: float) -> void:
 	if not is_active():
 		return
+	var used := engine.chances_used
 	for event in engine.tick(minf(delta, MAX_FRAME)):
 		matched.emit(event)
+	if engine.chances_used > used:
+		chance_lost.emit(engine.chances_left)
 	ticked.emit()
 	_check_finish()
 

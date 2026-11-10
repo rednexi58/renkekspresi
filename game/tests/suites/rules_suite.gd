@@ -105,14 +105,56 @@ func _economy_and_progress(report: TestReport) -> void:
 	var copy := PlayerProgress.from_dict(progress.to_dict())
 	report.check(copy.to_dict() == progress.to_dict(), "Progress round-trips through serialisation")
 	var buyer := PlayerProgress.new()
-	report.check(PurchaseFulfillment.fulfil(ProductCatalog.STARTER, buyer) == 1500 and buyer.owns_vip and buyer.owns_skin("golden"), "Starter pack grants coins, VIP and livery")
+	report.check(PurchaseFulfillment.fulfil(ProductCatalog.STARTER, buyer) == 1500 and buyer.owns_skin("golden") and buyer.booster_bank == PackedInt32Array([3, 3, 3]) and not buyer.has_vip(GameContext.now()), "Starter pack grants coins, livery and boosters, not VIP")
 	report.check(PurchaseFulfillment.fulfil(ProductCatalog.NO_ADS, buyer) == 2000 and buyer.owns_no_ads, "No Ads grants coins and removes interstitials")
 	buyer.piggy_coins = 420
 	report.check(PurchaseFulfillment.fulfil(ProductCatalog.PIGGY, buyer) == 420 and buyer.piggy_coins == 0, "Piggy bank pays out what it holds")
-	var unavailable := UnavailableCommerce.new()
+	var unavailable := CommerceService.new()
 	report.check(not unavailable.can_purchase(ProductCatalog.VIP) and not unavailable.can_show_rewarded() and unavailable.price(ProductCatalog.VIP) == "", "Release default offers nothing")
+	_subscriptions(report)
 	var damaged := PlayerProgress.from_dict({"unlocked": "x", "coins": -50, "skin_selected": "missing", "best_seconds": "bad"})
 	report.check(damaged.unlocked == 1 and damaged.coins == 0 and damaged.skin_selected == "classic", "Damaged save falls back to defaults")
+
+
+## VIP subscription and store bookkeeping: fulfilment once per transaction, VIP ending
+## with its period, StoreKit answers parsed into entitlements.
+func _subscriptions(report: TestReport) -> void:
+	var context := GameContext.new()
+	context.progress = PlayerProgress.new()
+	context.attach_commerce(CommerceService.new(DebugStore.new(), DebugAds.new()))
+	var granted := [-2]
+	context.buy(ProductCatalog.VIP, func(coins: int) -> void: granted[0] = coins)
+	report.check(granted[0] == 0 and context.has_vip() and context.is_ad_free(), "VIP purchase activates VIP and removes ads")
+	report.check(not context.commerce.can_purchase(ProductCatalog.VIP), "Active VIP cannot be bought twice")
+	context.progress.vip_until = GameContext.now() - 1
+	report.check(not context.has_vip() and not context.is_ad_free(), "VIP ends with its period")
+	context.buy(ProductCatalog.COINS_SMALL, func(coins: int) -> void: granted[0] = coins)
+	var coins := context.progress.coins
+	report.check(granted[0] == 1000, "Coin pack grants its coins")
+	context.commerce.purchased.emit(ProductCatalog.COINS_SMALL, "debug-2")
+	report.check(context.progress.coins == coins, "A transaction reported twice is fulfilled once")
+	var store := StoreKitStore.new()
+	var now := GameContext.now()
+	var future := Time.get_datetime_string_from_unix_time(now + 86400 * 20) + ".000Z"
+	var past := Time.get_datetime_string_from_unix_time(now - 86400) + ".000Z"
+	store._on_entitlements({"result": "success", "transactions": [
+		{"productID": ProductCatalog.VIP, "expirationDate": future},
+		{"productID": ProductCatalog.NO_ADS},
+		{"productID": ProductCatalog.STARTER, "revocationDate": past}]})
+	report.check(store.entitlements_known() and absi(store.subscription_expiry(ProductCatalog.VIP) - (now + 86400 * 20)) <= 1, "Active subscription expiry parsed")
+	report.check(store.owns(ProductCatalog.NO_ADS) and not store.owns(ProductCatalog.STARTER), "Owned and refunded products told apart")
+	store._on_entitlements({"result": "success", "transactions": [{"productID": ProductCatalog.VIP, "expirationDate": past}]})
+	report.check(store.subscription_expiry(ProductCatalog.VIP) == 0 and not store.owns(ProductCatalog.NO_ADS), "Expired subscription and missing products cleared")
+	var bought := []
+	store.purchased.connect(func(product_id: String, transaction_id: String) -> void: bought.append([product_id, transaction_id]))
+	var renewal := JSON.stringify({"transactionId": "2000001", "expiresDate": float(now + 86400 * 30) * 1000.0})
+	store._on_purchase({"result": "success", "productID": ProductCatalog.VIP, "json": renewal})
+	report.check(bought == [[ProductCatalog.VIP, "2000001"]] and absi(store.subscription_expiry(ProductCatalog.VIP) - (now + 86400 * 30)) <= 1, "Renewal from the update stream extends VIP")
+	var sync_progress := PlayerProgress.new()
+	sync_progress.vip_until = now + 999
+	var known := CommerceService.new(store, AdProvider.new())
+	PurchaseFulfillment.sync_entitlements(known, sync_progress)
+	report.check(sync_progress.vip_until == store.subscription_expiry(ProductCatalog.VIP), "Progress mirrors the store's subscription end")
 
 
 func _reward_guard(report: TestReport) -> void:

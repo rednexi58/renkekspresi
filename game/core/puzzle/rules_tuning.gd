@@ -32,6 +32,13 @@ var catch_up := 7.5
 ## into a front piece and a far-behind rest; a speed that grows with the gap keeps the
 ## train coupled (a gap halves about every 0.08 s) without snapping.
 var catch_up_gain := 9.0
+## Times the train may reach the final stop in one level; every time but the last it is
+## pushed back (as on a continue) and play goes on, the last time the level is lost.
+## Gives a player who misjudged once a second and third try inside the same run.
+var chances := 3
+## Push-back and freeze applied when a chance is used (fraction of the track, seconds).
+var chance_pushback := 0.35
+var chance_freeze := 2.0
 ## Scales the short delay before a collector takes its target wagon.
 var dispatch_factor := 0.8
 
@@ -49,5 +56,6 @@ static func legacy() -> RulesTuning:
 	tuning.approach_factor = 1.0
 	tuning.catch_up = 5.45
 	tuning.catch_up_gain = 0.0
+	tuning.chances = 1
 	tuning.dispatch_factor = 1.0
 	return tuning

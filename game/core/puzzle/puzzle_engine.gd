@@ -64,6 +64,10 @@ var reward_slots_granted := 0
 var assisted := false
 ## Times the player continued after losing (each continue counts as assisted).
 var revives := 0
+## Chances left in this level (see RulesTuning.chances) and how many were used. A chance
+## is used when the train reaches the final stop while another one is left.
+var chances_left := 1
+var chances_used := 0
 ## Uses left for [FREEZE, BLAST, RECALL].
 var booster_stock: PackedInt32Array = PackedInt32Array([0, 0, 1])
 
@@ -72,6 +76,7 @@ func _init(level_definition: LevelDefinition, has_vip: bool = false, slot_policy
 	level = level_definition
 	policy = slot_policy if slot_policy != null else SlotPolicy.standard()
 	tuning = rules_tuning if rules_tuning != null else RulesTuning.standard()
+	chances_left = maxi(1, tuning.chances)
 	var lanes := maxi(1, level.train_count)
 	heads.resize(lanes)
 	recoils.resize(lanes)
@@ -321,6 +326,17 @@ func use_booster(kind: int, events: Array[MatchEvent]) -> BoosterResult:
 func revive(pushback_fraction: float = 0.35, freeze_seconds: float = 3.0) -> bool:
 	if status != Status.LOST:
 		return false
+	_push_back(pushback_fraction, freeze_seconds)
+	chances_left = 1
+	revives += 1
+	assisted = true
+	status = Status.PLAYING
+	return true
+
+
+## Pulls every lane back by `pushback_fraction` of the track and freezes the trains;
+## wagons move with their engine so each train stays intact.
+func _push_back(pushback_fraction: float, freeze_seconds: float) -> void:
 	var span := end_distance - start_distance
 	for lane in heads.size():
 		var target := maxf(start_distance, heads[lane] - span * pushback_fraction)
@@ -332,10 +348,6 @@ func revive(pushback_fraction: float = 0.35, freeze_seconds: float = 3.0) -> boo
 				wagon.distance -= delta
 	head_distance = active_head()
 	freeze_left = maxf(freeze_left, freeze_seconds)
-	revives += 1
-	assisted = true
-	status = Status.PLAYING
-	return true
 
 
 func _recall_last() -> void:
@@ -396,7 +408,18 @@ func _step(step: float, events: Array[MatchEvent]) -> void:
 	if wagons.is_empty():
 		status = Status.WON
 	elif danger() >= 1.0:
+		_reach_end()
+
+
+## The train reached the final stop: spend a chance and push it back, or lose.
+func _reach_end() -> void:
+	chances_left -= 1
+	if chances_left <= 0:
+		chances_left = 0
 		status = Status.LOST
+		return
+	chances_used += 1
+	_push_back(tuning.chance_pushback, tuning.chance_freeze)
 
 
 func _advance_heads(step: float, frozen: bool) -> void:

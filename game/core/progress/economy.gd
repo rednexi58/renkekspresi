@@ -38,5 +38,5 @@ static func daily_reward(streak_day: int) -> int:
 	return DAILY_REWARDS[(maxi(1, streak_day) - 1) % DAILY_REWARDS.size()]
 
 
-static func interstitial_due(level_index: int, wins_since_last: int, no_ads: bool) -> bool:
-	return not no_ads and level_index >= INTERSTITIAL_FROM_LEVEL and wins_since_last >= INTERSTITIAL_EVERY_WINS
+static func interstitial_due(level_index: int, wins_since_last: int, ad_free: bool) -> bool:
+	return not ad_free and level_index >= INTERSTITIAL_FROM_LEVEL and wins_since_last >= INTERSTITIAL_EVERY_WINS

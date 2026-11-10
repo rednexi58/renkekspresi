@@ -72,6 +72,11 @@ func apply_settings(music_on: bool, sound_on: bool) -> void:
 		_music.stop()
 
 
+## Silences everything while a full-screen ad plays its own sound.
+func set_suspended(suspended: bool) -> void:
+	AudioServer.set_bus_mute(AudioServer.get_bus_index("Master"), suspended)
+
+
 func play(sound: String) -> void:
 	if not _sound_on or not SOUNDS.has(sound):
 		return

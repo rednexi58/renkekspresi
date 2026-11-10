@@ -4,9 +4,11 @@ Inputs (environment):
   APPLE_TEAM_ID   10-character Apple developer team id (Codemagic group renk_ekspresi_ios)
   BUILD_NUMBER_IOS  integer CFBundleVersion, higher than every build already uploaded
   APP_VERSION     marketing version (CFBundleShortVersionString), e.g. 1.1.0
-  PLAYTEST        "1" for internal TestFlight playtests: adds the "playtest" export
-                  feature, which enables instant test grants for VIP/rewarded slots.
-                  Must be unset for App Store submissions.
+  PLAYTEST        "1" adds the "playtest" export feature: instant test purchases and
+                  rewards where the native store/ad plugins are missing. Device builds
+                  with the plugins always use the real App Store (sandbox on TestFlight).
+  ADS_TEST        "1" adds the "ads_test" feature: Google test ads instead of the real
+                  ad units (for developer devices). Unset for App Store submissions.
 """
 import os
 import re
@@ -36,7 +38,7 @@ for key, value in values.items():
     if not re.search(pattern, text, re.M):
         raise SystemExit(f"Missing preset option {key}")
     text = re.sub(pattern, f"{key}={value}", text, flags=re.M)
-playtest = os.environ.get("PLAYTEST", "") == "1"
-text = re.sub(r'^custom_features=.*$', 'custom_features="playtest"' if playtest else 'custom_features=""', text, flags=re.M)
+features = [name for name, var in (("playtest", "PLAYTEST"), ("ads_test", "ADS_TEST")) if os.environ.get(var, "") == "1"]
+text = re.sub(r'^custom_features=.*$', 'custom_features="%s"' % ",".join(features), text, flags=re.M)
 preset.write_text(text)
-print(f"iOS preset prepared: version {version} ({build}), team {team}, playtest={playtest}")
+print(f"iOS preset prepared: version {version} ({build}), team {team}, features={features or 'none'}")

@@ -7,9 +7,12 @@ extends RefCounted
 
 signal level_chosen(index: int)
 signal toast(message: String)
+## The VIP subscription became active (bought or restored from the VIP screen).
+signal vip_activated
 
 var _context: GameContext
 var _card: MenuCard
+var _current := ""
 
 
 func _init(context: GameContext, card: MenuCard) -> void:
@@ -17,8 +20,17 @@ func _init(context: GameContext, card: MenuCard) -> void:
 	_card = card
 
 
+## Re-opens the current menu (prices arrived, ownership changed).
+func refresh() -> void:
+	if _card.visible and not _current.is_empty():
+		open(_current)
+
+
 func open(menu: String) -> void:
+	_current = menu
 	match menu:
+		"vip":
+			_vip()
 		"levels":
 			_levels()
 		"shop":
@@ -100,7 +112,10 @@ func _shop() -> void:
 	var progress := _context.progress
 	if not progress.owns_starter:
 		_product_row(content, ProductCatalog.STARTER, _t("SHOP_STARTER"), _t("SHOP_STARTER_DESC"), Color("ff6f91"))
-	_product_row(content, ProductCatalog.VIP, _t("SHOP_VIP"), _t("SHOP_VIP_DESC"), Palette.BUTTON_PRIMARY, progress.owns_vip)
+	if _context.has_vip():
+		content.add_child(MenuCard.row(_t("SHOP_VIP"), _t("VIP_ACTIVE_UNTIL") % _date(progress.vip_until), _t("VIP_MANAGE"), func() -> void: OS.shell_open(ProductCatalog.MANAGE_SUBSCRIPTIONS_URL), Palette.INK_SOFT))
+	elif commerce.can_purchase(ProductCatalog.VIP):
+		content.add_child(MenuCard.row(_t("SHOP_VIP"), _t("SHOP_VIP_DESC"), _t("VIP_PER_MONTH") % commerce.price(ProductCatalog.VIP), func() -> void: open("vip"), Palette.BUTTON_PRIMARY))
 	_product_row(content, ProductCatalog.NO_ADS, _t("SHOP_NOADS"), _t("SHOP_NOADS_DESC"), Palette.BUTTON_BLUE, progress.owns_no_ads)
 	for id in [ProductCatalog.COINS_SMALL, ProductCatalog.COINS_MEDIUM, ProductCatalog.COINS_LARGE]:
 		_product_row(content, id, _t("SHOP_COINS_N") % _thousands(ProductCatalog.coins_for(id)), "", Palette.BUTTON_GREEN)
@@ -108,8 +123,62 @@ func _shop() -> void:
 	var piggy_text := _t("SHOP_PIGGY_DESC") % progress.piggy_coins if piggy_ready else _t("SHOP_PIGGY_LOCKED") % Economy.PIGGY_MIN_TO_BREAK
 	if commerce.can_purchase(ProductCatalog.PIGGY):
 		content.add_child(MenuCard.row(_t("SHOP_PIGGY"), piggy_text, commerce.price(ProductCatalog.PIGGY), _buy.bind(ProductCatalog.PIGGY), Color("ff9ec4"), piggy_ready))
-	if commerce.can_purchase(ProductCatalog.COINS_SMALL) or commerce.owns(ProductCatalog.VIP):
+	if commerce.can_purchase(ProductCatalog.COINS_SMALL) or _context.has_vip():
 		content.add_child(MenuCard.row(_t("RESTORE_TITLE"), _t("RESTORE_DESC"), _t("RESTORE_BTN"), _restore, Palette.INK_SOFT))
+	content.add_child(_legal_links())
+
+
+## VIP subscription screen: what it gives, the price per month, the renewal terms Apple
+## requires next to every subscription offer (guideline 3.1.2), Terms of Use and Privacy
+## links, and Restore. Opened from the shop and from the VIP slot in a level.
+func _vip() -> void:
+	var content := _card.open(_t("VIP_TITLE"))
+	var commerce := _context.commerce
+	content.add_child(UiStyle.body(_t("VIP_BENEFITS"), 36, Palette.INK))
+	if _context.has_vip():
+		content.add_child(MenuCard.row(_t("VIP_ACTIVE"), _t("VIP_ACTIVE_UNTIL") % _date(_context.progress.vip_until), _t("VIP_MANAGE"), func() -> void: OS.shell_open(ProductCatalog.MANAGE_SUBSCRIPTIONS_URL), Palette.INK_SOFT))
+	elif commerce.can_purchase(ProductCatalog.VIP):
+		var price := commerce.price(ProductCatalog.VIP)
+		content.add_child(MenuCard.row(_t("VIP_SUBSCRIBE"), _t("VIP_PER_MONTH") % price, _t("VIP_SUBSCRIBE_BTN"), _subscribe_vip, Palette.BUTTON_GREEN))
+		var terms := UiStyle.body(_t("VIP_TERMS") % price, 26, Palette.INK_SOFT)
+		content.add_child(terms)
+	else:
+		content.add_child(UiStyle.body(_t("STORE_UNAVAILABLE"), 30, Palette.INK_SOFT))
+	content.add_child(MenuCard.row(_t("RESTORE_TITLE"), _t("RESTORE_DESC"), _t("RESTORE_BTN"), _restore, Palette.INK_SOFT))
+	content.add_child(_legal_links())
+
+
+func _subscribe_vip() -> void:
+	_context.buy(ProductCatalog.VIP, func(coins: int) -> void:
+		if coins < 0:
+			toast.emit(_t("PURCHASE_FAILED"))
+		else:
+			toast.emit(_t("VIP_WELCOME"))
+			vip_activated.emit()
+		if _card.visible:
+			_vip())
+
+
+## Terms of Use (Apple's standard licence) and Privacy Policy, shown wherever something
+## can be bought.
+func _legal_links() -> Control:
+	var line := HBoxContainer.new()
+	line.alignment = BoxContainer.ALIGNMENT_CENTER
+	line.add_theme_constant_override("separation", 40)
+	for entry in [[_t("TERMS_OF_USE"), ProductCatalog.TERMS_URL], [_t("PRIVACY"), GameContext.PRIVACY_URL]]:
+		var link := LinkButton.new()
+		link.text = entry[0]
+		link.uri = entry[1]
+		link.underline = LinkButton.UNDERLINE_MODE_ALWAYS
+		link.add_theme_font_size_override("font_size", 30)
+		link.add_theme_color_override("font_color", Palette.BUTTON_BLUE_EDGE)
+		line.add_child(link)
+	return line
+
+
+static func _date(unix_seconds: int) -> String:
+	var date := Time.get_date_dict_from_unix_time(unix_seconds)
+	return "%02d.%02d.%d" % [date["day"], date["month"], date["year"]]
 
 
 func _product_row(content: VBoxContainer, product_id: String, title: String, description: String, tone: Color, owned: bool = false) -> void:
@@ -137,7 +206,10 @@ func _restore() -> void:
 		if ok:
 			PurchaseFulfillment.sync_entitlements(_context.commerce, _context.progress)
 			_context.save()
-		toast.emit(_t("RESTORED") if ok else _t("RESTORE_FAILED")))
+			if _context.has_vip():
+				vip_activated.emit()
+		toast.emit(_t("RESTORED") if ok else _t("RESTORE_FAILED"))
+		refresh())
 
 
 # --- Garage --------------------------------------------------------------------------
@@ -247,8 +319,13 @@ func _settings() -> void:
 	content.add_child(_toggle_row(_t("SETTINGS_HAPTICS"), progress.haptics_on, func() -> void: progress.haptics_on = not progress.haptics_on))
 	var current := TranslationServer.get_locale().substr(0, 2)
 	content.add_child(MenuCard.row(_t("SETTINGS_LANGUAGE"), "Türkçe / English", "EN" if current == "tr" else "TR", _switch_language, Palette.BUTTON_BLUE))
-	if _context.commerce.can_purchase(ProductCatalog.COINS_SMALL) or _context.commerce.owns(ProductCatalog.VIP):
+	if _context.commerce.can_purchase(ProductCatalog.COINS_SMALL) or _context.has_vip():
 		content.add_child(MenuCard.row(_t("RESTORE_TITLE"), _t("RESTORE_DESC"), _t("RESTORE_BTN"), _restore, Palette.INK_SOFT))
+	if _context.has_vip():
+		content.add_child(MenuCard.row(_t("VIP_MANAGE_TITLE"), "", "↗", func() -> void: OS.shell_open(ProductCatalog.MANAGE_SUBSCRIPTIONS_URL), Palette.INK_SOFT))
+	if _context.commerce.has_privacy_options():
+		content.add_child(MenuCard.row(_t("AD_PRIVACY"), "", "↗", func() -> void: _context.commerce.show_privacy_options(), Palette.INK_SOFT))
+	content.add_child(MenuCard.row(_t("TERMS_OF_USE"), "", "↗", func() -> void: OS.shell_open(ProductCatalog.TERMS_URL), Palette.INK_SOFT))
 	content.add_child(MenuCard.row(_t("PRIVACY"), "", "↗", func() -> void: OS.shell_open(GameContext.PRIVACY_URL), Palette.INK_SOFT))
 	content.add_child(MenuCard.row(_t("SUPPORT"), "", "↗", func() -> void: OS.shell_open(GameContext.SUPPORT_URL), Palette.INK_SOFT))
 	content.add_child(UiStyle.body(_t("VERSION_N") % ProjectSettings.get_setting("application/config/version", "1.0"), 28))

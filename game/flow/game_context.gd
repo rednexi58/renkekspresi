@@ -14,6 +14,7 @@ var progress: PlayerProgress
 var commerce: CommerceService
 var audio: AudioService
 var leaderboards: LeaderboardService
+var _last_granted := {}
 
 
 func save() -> void:
@@ -32,21 +33,39 @@ func haptic(milliseconds: int = 18) -> void:
 		Input.vibrate_handheld(milliseconds)
 
 
-## Store purchase with fulfilment and saving in one place; `finished` gets the coins
-## granted (or -1 when the purchase did not complete).
+## Connects the store: every verified transaction is fulfilled here exactly once, whether
+## it came from a purchase button, a renewal or a transaction finished on a later launch.
+func attach_commerce(service: CommerceService) -> void:
+	commerce = service
+	commerce.purchased.connect(_fulfil)
+
+
+func _fulfil(product_id: String, transaction_id: String) -> void:
+	if not progress.mark_delivered(transaction_id):
+		return
+	_last_granted[product_id] = PurchaseFulfillment.fulfil(product_id, progress, commerce.subscription_expiry(ProductCatalog.VIP))
+	save()
+
+
+## Starts a purchase; `finished` gets the coins granted (or -1 when it did not complete).
+## Fulfilment already happened in _fulfil by the time `finished` runs.
 func buy(product_id: String, finished: Callable) -> void:
+	_last_granted.erase(product_id)
 	commerce.purchase(product_id, func(ok: bool) -> void:
-		if not ok:
-			finished.call(-1)
-			return
-		var coins := PurchaseFulfillment.fulfil(product_id, progress)
-		save()
-		finished.call(coins))
+		finished.call(int(_last_granted.get(product_id, 0)) if ok else -1))
 
 
 func language() -> String:
 	return TranslationServer.get_locale().substr(0, 2)
 
 
+static func now() -> int:
+	return int(Time.get_unix_time_from_system())
+
+
 func has_vip() -> bool:
-	return progress.owns_vip or commerce.has_vip()
+	return progress.has_vip(now())
+
+
+func is_ad_free() -> bool:
+	return progress.is_ad_free(now())

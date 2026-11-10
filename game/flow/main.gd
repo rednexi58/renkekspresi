@@ -43,14 +43,17 @@ func _ready() -> void:
 		push_error("Campaign could not be loaded")
 		return
 	context.progress = SaveStore.load_progress()
-	context.commerce = _create_commerce()
+	context.attach_commerce(CommerceFactory.create())
 	context.commerce.entitlements_changed.connect(_on_entitlements_changed)
+	context.commerce.products_changed.connect(_on_products_changed)
 	context.audio = AudioService.new()
 	add_child(context.audio)
 	context.leaderboards = LeaderboardService.create()
 	add_child(context.leaderboards)
 	context.apply_settings()
+	context.commerce.fullscreen_changed.connect(context.audio.set_suspended)
 	_build_ui()
+	context.commerce.start(self)
 	var requested := _requested_level()
 	if requested >= 0:
 		# Development/screenshot shortcut: jump straight into the requested level.
@@ -59,15 +62,6 @@ func _ready() -> void:
 		start_level(requested)
 	else:
 		show_home()
-
-
-## Development builds and internal "playtest" TestFlight builds get an instant test
-## provider so every paid and rewarded flow can be tried; App Store builds never do,
-## and until real providers are attached they show no paid or rewarded entry point.
-func _create_commerce() -> CommerceService:
-	if OS.is_debug_build() or OS.has_feature("playtest"):
-		return DebugCommerce.new()
-	return UnavailableCommerce.new()
 
 
 func _build_ui() -> void:
@@ -84,8 +78,10 @@ func _build_ui() -> void:
 	card = MenuCard.new()
 	layer.add_child(card)
 	card.closed.connect(_refresh_home)
+	card.closed.connect(_resume)
 	menus = Menus.new(context, card)
 	menus.level_chosen.connect(start_level)
+	menus.vip_activated.connect(_on_vip_activated)
 	dialog = DialogOverlay.new()
 	layer.add_child(dialog)
 	toaster = Toaster.new()
@@ -148,6 +144,7 @@ func start_level(index: int) -> void:
 	session.ticked.connect(_sync)
 	session.finished.connect(_on_finished)
 	session.slots_changed.connect(_sync)
+	session.chance_lost.connect(_on_chance_lost)
 	_combo.reset()
 	_peak_danger = 0.0
 	context.audio.set_season(Season.of(level_index))
@@ -276,6 +273,17 @@ func _on_matched(event: MatchEvent) -> void:
 		context.haptic(10 + mini(combo, 5) * 4)
 
 
+## The train reached the end with a chance to spare: it was pushed back by the rules;
+## make the moment unmistakable (shake, sound, a heart breaking) without stopping play.
+func _on_chance_lost(left: int) -> void:
+	world.play_loss()
+	context.audio.play("lose")
+	context.haptic(50)
+	hud.break_heart()
+	var scene := world.scene_rect()
+	world.fx.float_text(tr("CHANCE_LOST") % left, scene.get_center(), Palette.DANGER, 74)
+
+
 func _on_booster(kind: int) -> void:
 	if session == null or not session.is_active():
 		return
@@ -342,14 +350,18 @@ func _resume() -> void:
 
 # --- Paid and rewarded offers --------------------------------------------------------
 
-## VIP: one permanent extra slot in every level, opened only after a verified purchase.
+## VIP: the subscription screen (benefits, price, renewal terms, links) opens over the
+## level; the slot opens as soon as the subscription is verified (_on_vip_activated).
 func _offer_vip() -> void:
 	session.paused = true
-	var token := _reward_guard.begin()
-	context.buy(ProductCatalog.VIP, func(coins: int) -> void:
-		if _reward_guard.accept(token, coins >= 0) and context.has_vip():
-			session.unlock_vip_slot()
-		_resume())
+	menus.open("vip")
+
+
+func _on_vip_activated() -> void:
+	if session != null and context.has_vip():
+		session.unlock_vip_slot()
+	_update_offers()
+	_sync()
 
 
 ## Rewarded ad: one more slot for this level, granted only if the ad was watched.
@@ -372,8 +384,16 @@ func _rewarded(placement: String, grant: Callable) -> void:
 func _on_entitlements_changed() -> void:
 	PurchaseFulfillment.sync_entitlements(context.commerce, context.progress)
 	context.save()
+	if session != null and context.has_vip():
+		session.unlock_vip_slot()
 	_update_offers()
 	_sync()
+
+
+func _on_products_changed() -> void:
+	_update_offers()
+	if card.visible:
+		menus.refresh()
 
 
 # --- Results -------------------------------------------------------------------------
@@ -393,7 +413,7 @@ func _on_win() -> void:
 	world.play_win()
 	context.audio.play("win")
 	var hard := LevelTags.is_hard(context.campaign, level_index)
-	var result := RunResult.score(engine.assisted, engine.revives, _peak_danger, _combo.best, hard)
+	var result := RunResult.score(engine.assisted, engine.revives, _peak_danger, _combo.best, hard, engine.chances_used)
 	var seconds := maxi(1, int(engine.elapsed))
 	var was_record := progress.best_seconds[level_index] == 0 or seconds < progress.best_seconds[level_index]
 	_last_win_coins = result.total_coins()
@@ -450,7 +470,7 @@ func _on_win() -> void:
 ## Interstitials are paced by Economy and never shown to No Ads owners.
 func _after_win(next_index: int) -> void:
 	var progress := context.progress
-	if Economy.interstitial_due(level_index, progress.wins_since_interstitial, progress.owns_no_ads) and context.commerce.can_show_interstitial():
+	if Economy.interstitial_due(level_index, progress.wins_since_interstitial, context.is_ad_free()) and context.commerce.can_show_interstitial():
 		progress.wins_since_interstitial = 0
 		context.save()
 		context.commerce.show_interstitial(func() -> void: start_level(next_index))
@@ -498,6 +518,9 @@ func _revive() -> void:
 
 
 func _notification(what: int) -> void:
+	# Back from the background: the subscription may have renewed or ended meanwhile.
+	if what == NOTIFICATION_APPLICATION_RESUMED and context.commerce != null:
+		context.commerce.refresh()
 	# Going to the background (call, home button) pauses play and saves.
 	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
 		if context.progress != null:

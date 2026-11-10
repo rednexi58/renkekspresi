@@ -11,6 +11,25 @@ func run(campaign: Campaign, report: TestReport) -> void:
 	_progress_fields(report)
 	_campaign_balance(campaign, report)
 	_train_stays_coupled(campaign, report)
+	_chances(campaign, report)
+
+
+## The train may reach the end twice and is pushed back each time; the third time the
+## level is lost; a continue gives exactly one more chance.
+func _chances(campaign: Campaign, report: TestReport) -> void:
+	var rules := PuzzleEngine.new(campaign.level_at(5))
+	rules.booster_stock = PackedInt32Array([0, 0, 0])
+	rules.start()
+	report.check(rules.chances_left == 3, "Three chances at the start")
+	var guard := 0
+	while rules.is_playing() and guard < 20000:
+		rules.tick(0.05)
+		guard += 1
+	report.check(rules.status == PuzzleEngine.Status.LOST and rules.chances_used == 2 and rules.chances_left == 0, "Lost only on the third arrival (used %d)" % rules.chances_used)
+	report.check(rules.revive(), "Continue after the last chance")
+	report.check(rules.chances_left == 1 and rules.is_playing(), "Continue gives one chance")
+	var legacy := PuzzleEngine.new(campaign.level_at(5), false, null, RulesTuning.legacy())
+	report.check(legacy.chances_left == 1, "Legacy rules keep a single chance")
 
 
 ## While collectors empty the middle of a train, the wagons behind must close up quickly:
@@ -93,6 +112,8 @@ func _run_result(report: TestReport) -> void:
 	report.check(boosted.stars == 2, "Booster win: 2 stars")
 	var revived := RunResult.score(false, 1, 0.99, 1, false)
 	report.check(revived.stars == 1 and not revived.near_miss, "Revived win: 1 star, no near miss")
+	report.check(RunResult.score(false, 0, 0.3, 1, false, 1).stars == 2, "One chance used: 2 stars")
+	report.check(RunResult.score(false, 0, 0.99, 1, false, 2).stars == 1 and not RunResult.score(false, 0, 0.99, 1, false, 1).near_miss, "Two chances used: 1 star; no near miss after a chance")
 	var close := RunResult.score(false, 0, 0.9, 5, true)
 	report.check(close.near_miss and close.near_miss_coins == RunResult.NEAR_MISS_BONUS, "Near miss bonus")
 	report.check(close.combo_coins == 3 * RunResult.COMBO_COINS_PER_STEP, "Combo x5 coins")

@@ -1,62 +1,90 @@
 class_name CommerceService
 extends RefCounted
-## The game's only view of money: App Store purchases and ads. Game code asks what is
-## available and requests an outcome; it never decides on its own that a reward was
-## earned or a purchase made.
+## The game's only view of money: App Store purchases (StoreProvider) and ads
+## (AdProvider). Game code asks what is available and requests an outcome; it never
+## decides on its own that a reward was earned or a purchase made.
 ##
-## Concrete providers (StoreKit, an ad network) subclass this. While no real provider is
-## attached, UnavailableCommerce reports nothing as available, so the interface hides
-## every paid or rewarded entry point and the shipped app never contains a button that
-## cannot work (App Review guideline 2.1).
+## Store and ads are separate providers because they vary independently (StoreKit with
+## no ads on a simulator, test ads with real sandbox purchases on TestFlight...), and a
+## class per concern keeps each one small and testable; this facade only composes them.
 
 signal entitlements_changed
+signal purchased(product_id: String, transaction_id: String)
+signal products_changed
+signal fullscreen_changed(showing: bool)
+
+var store: StoreProvider
+var ads: AdProvider
 
 
-## True if the player owns a non-consumable product.
-func owns(_product_id: String) -> bool:
-	return false
+func _init(store_provider: StoreProvider = null, ad_provider: AdProvider = null) -> void:
+	store = store_provider if store_provider != null else StoreProvider.new()
+	ads = ad_provider if ad_provider != null else AdProvider.new()
+	store.entitlements_changed.connect(func() -> void: entitlements_changed.emit())
+	store.purchased.connect(func(product_id: String, transaction_id: String) -> void: purchased.emit(product_id, transaction_id))
+	store.products_changed.connect(func() -> void: products_changed.emit())
+	ads.fullscreen_changed.connect(func(showing: bool) -> void: fullscreen_changed.emit(showing))
 
 
-func can_purchase(_product_id: String) -> bool:
-	return false
+func start(host: Node) -> void:
+	store.start(host)
+	ads.start(host)
 
 
-## Localised price to display, or "" when the product is unavailable.
-func price(_product_id: String) -> String:
-	return ""
+func refresh() -> void:
+	store.refresh()
 
 
-## Starts a purchase; `finished` receives true only for a verified, completed purchase.
-func purchase(_product_id: String, finished: Callable) -> void:
-	finished.call(false)
+func entitlements_known() -> bool:
+	return store.entitlements_known()
 
 
-## Restores non-consumables; `finished` receives true when the store answered.
+func owns(product_id: String) -> bool:
+	return store.owns(product_id)
+
+
+func subscription_expiry(product_id: String) -> int:
+	return store.subscription_expiry(product_id)
+
+
+func can_purchase(product_id: String) -> bool:
+	return store.can_purchase(product_id)
+
+
+func price(product_id: String) -> String:
+	return store.price(product_id)
+
+
+func purchase(product_id: String, finished: Callable) -> void:
+	store.purchase(product_id, finished)
+
+
 func restore_purchases(finished: Callable) -> void:
-	finished.call(false)
+	store.restore(finished)
 
 
 func can_show_rewarded() -> bool:
-	return false
+	return ads.can_show_rewarded()
 
 
-## Shows a rewarded ad; `finished` receives true only when the reward was earned.
-func show_rewarded(_placement: String, finished: Callable) -> void:
-	finished.call(false)
+func show_rewarded(placement: String, finished: Callable) -> void:
+	ads.show_rewarded(placement, finished)
 
 
 func can_show_interstitial() -> bool:
-	return false
+	return ads.can_show_interstitial()
 
 
-## Shows an interstitial if one is ready; `finished` is always called afterwards.
 func show_interstitial(finished: Callable) -> void:
-	finished.call()
+	ads.show_interstitial(finished)
 
 
-# Convenience for the VIP slot flow.
-func has_vip() -> bool:
-	return owns(ProductCatalog.VIP)
+func has_privacy_options() -> bool:
+	return ads.has_privacy_options()
+
+
+func show_privacy_options() -> void:
+	ads.show_privacy_options()
 
 
 func can_purchase_vip() -> bool:

@@ -1,4 +1,4 @@
-# Renk Ekspresi — Godot 4.5.1 iOS build, uploaded to TestFlight.
+# Renk Ekspresi — Godot 4.6.3 iOS build, uploaded to TestFlight.
 # Requires in Codemagic: App Store Connect integration "Apple AppStore", the
 # renk_ekspresi_ios variable group (APPLE_TEAM_ID) and automatic iOS signing for
 # com.bedogames.renkekspresi.
@@ -16,15 +16,18 @@ workflows:
       vars:
         APP_STORE_APPLE_ID: "6825955053"
         APP_VERSION: "1.1.0"
-        # Internal playtest builds: VIP/rewarded slots grant instantly for testing.
-        # Set to "0" for a build meant for App Store review.
-        PLAYTEST: "1"
+        # Real App Store (sandbox on TestFlight) and real AdMob units: this build is
+        # suitable for App Store review. ADS_TEST "1" switches to Google test ads.
+        PLAYTEST: "0"
+        ADS_TEST: "0"
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.bedogames.renkekspresi
     scripts:
-      - name: Install Godot 4.5.1 and the iOS export template
+      - name: Install Godot 4.6.3 and the iOS export template
         script: bash ci/install_godot_macos.sh
+      - name: Fetch native iOS plugins (AdMob, StoreKit)
+        script: bash ci/fetch_ios_plugins.sh
       - name: Import project and run the test suites
         script: |
           set -euo pipefail

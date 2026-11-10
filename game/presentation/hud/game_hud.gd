@@ -24,6 +24,7 @@ var _title: Label
 var _city: Label
 var _hard: PanelContainer
 var _counter: Label
+var _chances: ChancesBar
 var _progress: ProgressTrack
 var _boosters: Array[BoosterButton] = []
 var _toast: PanelContainer
@@ -74,7 +75,7 @@ func _build_top() -> void:
 	_top.add_child(_city)
 	_hard = PanelContainer.new()
 	_hard.add_theme_stylebox_override("panel", UiStyle.pill(Palette.DANGER, Palette.DANGER.darkened(0.35)))
-	_hard.position = Vector2(830, 140)
+	_hard.position = Vector2(26, 196)
 	_hard.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hard.add_child(UiStyle.heading(tr("HARD_BADGE"), 30, Palette.WHITE, Palette.DANGER.darkened(0.5)))
 	_top.add_child(_hard)
@@ -86,6 +87,9 @@ func _build_top() -> void:
 	_top.add_child(chip)
 	_counter = UiStyle.heading("", 44, Palette.INK, Color(0, 0, 0, 0))
 	chip.add_child(_counter)
+	_chances = ChancesBar.new()
+	_chances.position = Vector2(818, 146)
+	_top.add_child(_chances)
 
 
 func _build_bottom() -> void:
@@ -148,8 +152,13 @@ func show_level(level: LevelDefinition, city: String, hard: bool) -> void:
 func refresh(engine: PuzzleEngine, boosters_enabled: bool) -> void:
 	_counter.text = "%d/%d" % [engine.rescued_count(), engine.total_wagons]
 	_progress.danger = engine.danger()
+	_chances.show_chances(engine.chances_left, maxi(engine.tuning.chances, engine.chances_left + engine.chances_used))
 	for kind in 3:
 		_boosters[kind].show_state(tr(BOOSTER_KEYS[kind]), engine.booster_stock[kind], boosters_enabled)
+
+
+func break_heart() -> void:
+	_chances.break_heart()
 
 
 func toast(message: String) -> void:
