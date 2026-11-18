@@ -63,8 +63,21 @@ func restore_purchases(finished: Callable) -> void:
 	store.restore(finished)
 
 
+func offers_rewarded() -> bool:
+	return ads.offers_rewarded()
+
+
 func can_show_rewarded() -> bool:
 	return ads.can_show_rewarded()
+
+
+func prepare_rewarded() -> void:
+	ads.prepare_rewarded()
+
+
+## The VIP slot is offered wherever there is an App Store, until VIP is active.
+func offers_vip() -> bool:
+	return store.is_available()
 
 
 func show_rewarded(placement: String, finished: Callable) -> void:
@@ -87,5 +100,3 @@ func show_privacy_options() -> void:
 	ads.show_privacy_options()
 
 
-func can_purchase_vip() -> bool:
-	return can_purchase(ProductCatalog.VIP)

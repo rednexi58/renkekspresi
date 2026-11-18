@@ -40,9 +40,18 @@ func start(host: Node) -> void:
 	refresh()
 
 
+func is_available() -> bool:
+	return true
+
+
+## Also asks for prices again while some are missing (no network at launch, or products
+## that became available after the app started).
 func refresh() -> void:
-	if _plugin != null:
-		_plugin.call("request", "transactionCurrentEntitlements", {})
+	if _plugin == null:
+		return
+	_plugin.call("request", "transactionCurrentEntitlements", {})
+	if _prices.size() < ProductCatalog.all().size():
+		_request_products()
 
 
 func entitlements_known() -> bool:

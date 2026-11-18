@@ -11,6 +11,10 @@ var _expiry := {}
 var _next_transaction := 1
 
 
+func is_available() -> bool:
+	return true
+
+
 func entitlements_known() -> bool:
 	return true
 

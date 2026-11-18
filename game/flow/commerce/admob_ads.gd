@@ -24,6 +24,7 @@ var _interstitial_ready := false
 var _rewarded_ready := false
 var _interstitial_retries := 0
 var _rewarded_retries := 0
+var _rewarded_loading := false
 var _interstitial_done := Callable()
 var _rewarded_done := Callable()
 var _reward_earned := false
@@ -68,8 +69,18 @@ func start(host: Node) -> void:
 	_admob.update_consent_info()
 
 
+func offers_rewarded() -> bool:
+	return true
+
+
 func can_show_rewarded() -> bool:
 	return _rewarded_ready and not _rewarded_done.is_valid()
+
+
+func prepare_rewarded() -> void:
+	if _initialised and not _rewarded_ready and not _rewarded_loading:
+		_rewarded_retries = 0
+		_load_rewarded()
 
 
 func show_rewarded(_placement: String, finished: Callable) -> void:
@@ -133,7 +144,7 @@ func _initialise() -> void:
 
 func _on_initialised() -> void:
 	_admob.load_interstitial_ad()
-	_admob.load_rewarded_ad()
+	_load_rewarded()
 
 
 # --- Loading --------------------------------------------------------------------------
@@ -143,7 +154,17 @@ func _on_interstitial_loaded() -> void:
 	_interstitial_retries = 0
 
 
+## One rewarded request in flight at a time, whoever asks (start-up, back-off retry,
+## a player tapping an offer, or the ad that just closed).
+func _load_rewarded() -> void:
+	if _rewarded_loading or _rewarded_ready:
+		return
+	_rewarded_loading = true
+	_admob.load_rewarded_ad()
+
+
 func _on_rewarded_loaded() -> void:
+	_rewarded_loading = false
 	_rewarded_ready = true
 	_rewarded_retries = 0
 
@@ -155,9 +176,10 @@ func _retry_interstitial() -> void:
 
 
 func _retry_rewarded() -> void:
+	_rewarded_loading = false
 	var delay: float = RETRY_SECONDS[mini(_rewarded_retries, RETRY_SECONDS.size() - 1)]
 	_rewarded_retries += 1
-	_host.get_tree().create_timer(delay).timeout.connect(func() -> void: _admob.load_rewarded_ad())
+	_host.get_tree().create_timer(delay).timeout.connect(_load_rewarded)
 
 
 # --- Showing --------------------------------------------------------------------------
@@ -178,7 +200,7 @@ func _end_rewarded() -> void:
 	if not finished.is_valid():
 		return
 	fullscreen_changed.emit(false)
-	_admob.load_rewarded_ad()
+	_load_rewarded()
 	_host.get_tree().create_timer(REWARD_GRACE).timeout.connect(func() -> void:
 		_rewarded_done = Callable()
 		var earned := _reward_earned

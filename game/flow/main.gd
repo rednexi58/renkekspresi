@@ -207,7 +207,7 @@ func _show_tutorial() -> void:
 
 func _update_offers() -> void:
 	if world != null:
-		world.set_offers(context.commerce.can_purchase_vip() and not context.has_vip(), context.commerce.can_show_rewarded())
+		world.set_offers(context.commerce.offers_vip() and not context.has_vip(), context.commerce.offers_rewarded())
 
 
 func _frame_camera() -> void:
@@ -311,7 +311,7 @@ func _offer_booster(kind: int) -> void:
 		else:
 			toaster.show_message(tr("NOT_ENOUGH_COINS"))
 		_resume()]]
-	if context.commerce.can_show_rewarded():
+	if context.commerce.offers_rewarded():
 		buttons.append([tr("BTN_WATCH_AD"), DialogOverlay.Tone.GREEN, func() -> void:
 			_rewarded(PLACEMENT_BOOSTER, func() -> void: session.engine.grant_booster(kind))])
 	buttons.append([tr("BTN_CLOSE"), DialogOverlay.Tone.BLUE, _resume])
@@ -354,6 +354,7 @@ func _resume() -> void:
 ## level; the slot opens as soon as the subscription is verified (_on_vip_activated).
 func _offer_vip() -> void:
 	session.paused = true
+	context.commerce.refresh()
 	menus.open("vip")
 
 
@@ -372,13 +373,26 @@ func _offer_reward_slot() -> void:
 	_rewarded(PLACEMENT_SLOT, func() -> void: session.unlock_reward_slot())
 
 
-## Shows a rewarded ad and runs `grant` only if it was earned and still relevant.
+## Rewarded ad during play: grants, then resumes the level.
 func _rewarded(placement: String, grant: Callable) -> void:
+	_watch_ad(placement, grant, _resume)
+
+
+## Every rewarded offer goes through here. With an ad loaded it plays it, runs `grant`
+## only for an earned reward that is still relevant, then runs `after`. With no ad loaded
+## yet (fresh start, poor network, no fill) the player is told so, a load is requested
+## right away, and `unavailable` runs (by default `after`), so a tap never does nothing.
+func _watch_ad(placement: String, grant: Callable, after: Callable, unavailable := Callable()) -> void:
+	if not context.commerce.can_show_rewarded():
+		context.commerce.prepare_rewarded()
+		toaster.show_message(tr("AD_NOT_READY"))
+		(unavailable if unavailable.is_valid() else after).call()
+		return
 	var token := _reward_guard.begin()
 	context.commerce.show_rewarded(placement, func(earned: bool) -> void:
 		if _reward_guard.accept(token, earned):
 			grant.call()
-		_resume())
+		after.call())
 
 
 func _on_entitlements_changed() -> void:
@@ -449,22 +463,26 @@ func _on_win() -> void:
 	world.fx.coin_burst(scene.get_center(), Vector2(scene.end.x - 120.0, scene.position.y + 80.0), 12)
 	if result.near_miss:
 		world.fx.float_text(tr("NEAR_MISS"), scene.get_center(), Palette.DANGER, 90)
+	var title := tr("WIN_TITLE_CITY") % WorldTour.city(level_index, context.language())
+	_present_win(title, "\n".join(lines))
+
+
+## The win card; presented again unchanged if the "double coins" ad was not ready yet, so
+## the player keeps the offer.
+func _present_win(title: String, body: String) -> void:
 	var last := level_index >= context.campaign.count() - 1
 	var next := 0 if last else level_index + 1
 	var buttons := [[tr("ALL_DONE") if last else tr("BTN_NEXT"), DialogOverlay.Tone.GREEN, _after_win.bind(next)]]
-	if context.commerce.can_show_rewarded():
+	if context.commerce.offers_rewarded():
 		buttons.append([tr("BTN_DOUBLE"), DialogOverlay.Tone.PRIMARY, func() -> void:
-			var token := _reward_guard.begin()
-			context.commerce.show_rewarded(PLACEMENT_DOUBLE, func(earned: bool) -> void:
-				if _reward_guard.accept(token, earned):
-					var extra := _last_win_coins * (Economy.DOUBLE_REWARD_FACTOR - 1)
-					progress.add_coins(extra)
-					context.save()
-					toaster.show_message(tr("WIN_COINS") % extra)
-				_after_win(next))])
+			_watch_ad(PLACEMENT_DOUBLE, func() -> void:
+				var extra := _last_win_coins * (Economy.DOUBLE_REWARD_FACTOR - 1)
+				context.progress.add_coins(extra)
+				context.save()
+				toaster.show_message(tr("WIN_COINS") % extra),
+				_after_win.bind(next), _present_win.bind(title, body))])
 	buttons.append([tr("BTN_HOME"), DialogOverlay.Tone.BLUE, show_home])
-	var title := tr("WIN_TITLE_CITY") % WorldTour.city(level_index, context.language())
-	dialog.present(title, "\n".join(lines), buttons, Palette.GOLD)
+	dialog.present(title, body, buttons, Palette.GOLD)
 
 
 ## Interstitials are paced by Economy and never shown to No Ads owners.
@@ -492,14 +510,9 @@ func _on_loss() -> void:
 			else:
 				toaster.show_message(tr("NOT_ENOUGH_COINS"))
 				_on_loss()])
-		if context.commerce.can_show_rewarded():
+		if context.commerce.offers_rewarded():
 			buttons.append([tr("BTN_CONTINUE_AD"), DialogOverlay.Tone.GREEN, func() -> void:
-				var token := _reward_guard.begin()
-				context.commerce.show_rewarded(PLACEMENT_CONTINUE, func(earned: bool) -> void:
-					if _reward_guard.accept(token, earned):
-						_revive()
-					else:
-						_on_loss())])
+				_continue_with_ad()])
 	buttons.append([tr("BTN_RETRY"), DialogOverlay.Tone.BLUE, func() -> void:
 		_forfeit_streak()
 		start_level(level_index)])
@@ -510,6 +523,16 @@ func _on_loss() -> void:
 	if context.progress.win_streak > 0:
 		body += "\n" + tr("STREAK_WARNING") % context.progress.win_streak
 	dialog.present(tr("LOSE_TITLE"), body, buttons, Palette.DANGER)
+
+
+## A watched ad revives; a skipped or unavailable one brings the loss card back.
+func _continue_with_ad() -> void:
+	var revived := [false]
+	_watch_ad(PLACEMENT_CONTINUE, func() -> void:
+		revived[0] = true
+		_revive(), func() -> void:
+		if not revived[0]:
+			_on_loss())
 
 
 func _revive() -> void:

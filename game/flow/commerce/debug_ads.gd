@@ -3,6 +3,10 @@ extends AdProvider
 ## Development ads: rewarded ads are always "watched", interstitials never shown.
 
 
+func offers_rewarded() -> bool:
+	return true
+
+
 func can_show_rewarded() -> bool:
 	return true
 

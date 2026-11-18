@@ -23,6 +23,13 @@ func start(_host: Node) -> void:
 	pass
 
 
+## True when this device has an App Store connection at all. Paid entry points (the VIP
+## slot on the shelf) are shown whenever this is true; the purchase screen itself says
+## when prices could not be loaded yet.
+func is_available() -> bool:
+	return false
+
+
 ## Re-reads entitlements (e.g. when the app returns to the foreground).
 func refresh() -> void:
 	pass
