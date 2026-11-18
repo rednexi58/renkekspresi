@@ -5,6 +5,9 @@ extends StoreProvider
 ## desktop. CommerceFactory never selects it on a device that has the StoreKit plugin.
 
 const SUBSCRIPTION_DAYS := 30
+## Marks every price as a test price; the screenshot tool clears it so App Review and store
+## screenshots show prices exactly as the App Store formats them.
+static var price_label := "TEST "
 
 var _owned := {}
 var _expiry := {}
@@ -34,7 +37,7 @@ func can_purchase(product_id: String) -> bool:
 
 
 func price(product_id: String) -> String:
-	return "TEST " + ProductCatalog.FALLBACK_PRICES.get(product_id, "")
+	return price_label + ProductCatalog.FALLBACK_PRICES.get(product_id, "")
 
 
 func purchase(product_id: String, finished: Callable) -> void:

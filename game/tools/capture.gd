@@ -4,6 +4,7 @@ extends SceneTree
 ##
 ##   godot --path game --rendering-driver opengl3 --resolution 1080x1920 \
 ##     --script res://tools/capture.gd -- --level=12 --out=/tmp/shot --times=0.5,6,20 [--play]
+##     [--store-prices]  (prices without the TEST label, for store/review screenshots)
 
 var _main: Main
 var _times: PackedFloat64Array = PackedFloat64Array([1.0])
@@ -35,6 +36,8 @@ func _initialize() -> void:
 			_menu = argument.get_slice("=", 1)
 		elif argument == "--play":
 			_play = true
+		elif argument == "--store-prices":
+			DebugStore.price_label = ""
 	_main = load("res://scenes/main.tscn").instantiate()
 	root.add_child(_main)
 
