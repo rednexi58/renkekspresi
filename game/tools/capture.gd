@@ -38,6 +38,10 @@ func _initialize() -> void:
 			_play = true
 		elif argument == "--store-prices":
 			DebugStore.price_label = ""
+	# Set before the game builds its UI, so labels created at start are in this language;
+	# set again after the first frame in case the game applies a saved language on boot.
+	if not _lang.is_empty():
+		TranslationServer.set_locale(_lang)
 	_main = load("res://scenes/main.tscn").instantiate()
 	root.add_child(_main)
 
@@ -60,6 +64,12 @@ func _process(delta: float) -> bool:
 			_next_pick += 1
 	if not _lang.is_empty() and _clock > 0.1:
 		TranslationServer.set_locale(_lang)
+		# The level title was written before the language switch; write it again.
+		if _main.session != null:
+			var index: int = _main.level_index
+			_main.hud.show_level(_main.context.campaign.level_at(index), WorldTour.city(index, _lang), LevelTags.is_hard(_main.context.campaign, index))
+		else:
+			_main.show_home()
 		_lang = ""
 	if not _menu.is_empty() and _clock > 0.3:
 		_main._open_menu(_menu)
