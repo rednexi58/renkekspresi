@@ -15,7 +15,7 @@ workflows:
         - renk_ekspresi_ios
       vars:
         APP_STORE_APPLE_ID: "6825955053"
-        APP_VERSION: "1.1.0"
+        APP_VERSION: "1.1.1"
         # Real App Store (sandbox on TestFlight) and real AdMob units: this build is
         # suitable for App Store review. ADS_TEST "1" switches to Google test ads.
         PLAYTEST: "0"
