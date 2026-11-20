@@ -11,6 +11,16 @@ extends Node3D
 const SCENE_SHARE_MIN := 0.42
 const SCENE_SHARE_MAX := 0.6
 const BAND_OVERLAP := 6.0
+## The shelf is drawn as wide as this share of the visible width, so its slots and the
+## VIP / "+1" buttons are large enough to read and tap on every screen. The board fit
+## alone would leave eight slots in a narrow strip, because the board is usually
+## limited by height and the screen has spare width on both sides.
+const SHELF_SCREEN_FILL := 0.94
+## Upper bound, so the slots never dwarf the board's pieces on very wide screens.
+const SHELF_SCALE_MAX := 2.2
+## Framing passes: the shelf's scale changes the framed region a little, which changes
+## the visible width; two passes settle it to well under a percent.
+const SHELF_FIT_PASSES := 2
 
 var camera: CameraRig
 var current_level: LevelDefinition
@@ -93,14 +103,45 @@ func frame(play_area: Rect2) -> void:
 	var scene_height := roundf(clampf(wanted, play_area.size.y * SCENE_SHARE_MIN, play_area.size.y * SCENE_SHARE_MAX))
 	_stage.place(Rect2(Vector2.ZERO, Vector2(screen_width, play_area.position.y + scene_height)), play_area.position.y)
 	var board_target := Rect2(play_area.position + Vector2(0.0, scene_height), Vector2(play_area.size.x, play_area.size.y - scene_height))
+	var shelf_scale := 1.0
+	for i in SHELF_FIT_PASSES:
+		camera.frame(_framing_region(shelf_scale), 1.1, board_target)
+		# Orthographic camera keeping width: `size` is the visible world width.
+		shelf_scale = clampf(camera.size * SHELF_SCREEN_FILL / _layout.shelf_width(), 1.0, SHELF_SCALE_MAX)
+	camera.frame(_framing_region(shelf_scale), 1.1, board_target)
+	_apply_shelf_scale(shelf_scale)
+
+
+## Ground rectangle the camera must show: the board plus the shelf drawn at `shelf_scale`.
+## The shelf's edge next to the board stays put and the shelf grows away from the board,
+## so the gap to the first row of pieces never shrinks.
+func _framing_region(shelf_scale: float) -> Rect2:
 	var board := _layout.board_rect()
-	var shelf_top := _layout.shelf_centre_z() - WorldLayout.SHELF_DEPTH * 0.5 - 0.15
+	var shelf_top := _shelf_board_edge() - (WorldLayout.SHELF_DEPTH + 0.15) * shelf_scale
 	var half_width := maxf(board.size.x, _layout.shelf_width()) * 0.5 + 0.2
-	var region := Rect2(Vector2(-half_width, shelf_top), Vector2(half_width * 2.0, board.end.y + 0.3 - shelf_top))
-	camera.frame(region, 1.1, board_target)
-	var band_depth := WorldLayout.SHELF_DEPTH + 0.9
+	return Rect2(Vector2(-half_width, shelf_top), Vector2(half_width * 2.0, board.end.y + 0.3 - shelf_top))
+
+
+## Ground Z of the shelf edge facing the board.
+func _shelf_board_edge() -> float:
+	return _layout.shelf_centre_z() + WorldLayout.SHELF_DEPTH * 0.5
+
+
+## Scales the shelf about its board-side edge (picking and flights already go through
+## the shelf's local transform) and fits the background band under it.
+func _apply_shelf_scale(shelf_scale: float) -> void:
+	var edge := _shelf_board_edge()
+	_shelf.scale = Vector3.ONE * shelf_scale
+	_shelf.position = Vector3(0.0, 0.0, edge * (1.0 - shelf_scale))
+	var shelf_depth := WorldLayout.SHELF_DEPTH * shelf_scale
+	var band_depth := shelf_depth + 0.9
 	_band.scale = Vector3(400.0, 0.2, band_depth + BAND_OVERLAP)
-	_band.position = Vector3(0.0, -0.05, _layout.shelf_centre_z() - BAND_OVERLAP * 0.5 + 0.1)
+	_band.position = Vector3(0.0, -0.05, edge - shelf_depth * 0.5 - BAND_OVERLAP * 0.5 + 0.1)
+
+
+## Centre of the shelf on the ground, as drawn.
+func _shelf_centre() -> Vector3:
+	return _shelf.to_global(Vector3(0.0, 0.0, _layout.shelf_centre_z()))
 
 
 ## Which unlock offers the shelf may show (from CommerceService availability).
@@ -180,7 +221,7 @@ func play_win() -> void:
 	ramp.offsets = PackedFloat32Array([0.0, 0.25, 0.5, 0.75, 1.0])
 	ramp.colors = PackedColorArray(Palette.WAGONS)
 	confetti.color_initial_ramp = ramp
-	confetti.position = Vector3(0.0, 1.0, _layout.shelf_centre_z())
+	confetti.position = _shelf_centre() + Vector3.UP
 	add_child(confetti)
 	confetti.emitting = true
 
